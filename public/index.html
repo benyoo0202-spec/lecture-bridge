@@ -140,6 +140,54 @@ body[data-mode="en"] .bul .en{font-size:15px;color:var(--ink)}
 .btn:disabled{opacity:.5;cursor:default}
 .btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .note{font-size:13.5px;border-radius:8px;padding:10px 12px;background:var(--soft);font-family:var(--kr);margin-bottom:16px;line-height:1.6}
+
+/* document summary */
+.drop{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:1.5px dashed color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:12px;background:var(--surface);padding:22px 16px;cursor:pointer;color:var(--accent)}
+.drop.over{background:var(--soft);border-style:solid}
+.drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.drop b{font-family:var(--kr);font-size:14.5px;color:var(--ink);font-weight:500;overflow-wrap:anywhere}
+.drop span{font-size:12px;color:var(--muted);font-family:var(--kr)}
+.drop:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.or{display:flex;align-items:center;gap:10px;margin:14px 0 10px;font-size:12px;color:var(--faint);font-family:var(--kr)}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.docbox{font-family:var(--sans);width:100%;min-height:140px;max-height:40vh;resize:vertical;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:10px 12px;font-size:16px;line-height:1.5}
+.flabel{display:block;margin-top:14px;font-size:12px;font-weight:600;color:var(--muted);font-family:var(--kr)}
+.finput{width:100%;margin-top:6px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:9px 10px;font-size:16px;font-family:var(--kr)}
+.prog{height:4px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:8px}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s ease}
+#docOut{margin-top:28px}
+.doc-head{border-top:1px solid var(--line);padding-top:22px;margin-bottom:22px}
+.doc-head h3{font-family:var(--serif);font-size:22px;line-height:1.3;margin:0;text-wrap:balance}
+.doc-head .sub{font-size:14px;color:var(--muted);margin:4px 0 0}
+.dsec{margin-bottom:22px}
+.dsec h4{font-family:var(--kr);font-size:16.5px;font-weight:700;margin:0 0 6px;text-wrap:balance}
+.dsec h4 small{display:block;font-family:var(--sans);font-size:12.5px;font-weight:500;color:var(--muted);margin-top:2px}
+.t-ko{font-family:var(--kr);font-size:15.5px;line-height:1.75;margin:0;word-break:keep-all;overflow-wrap:anywhere}
+.t-en{font-size:14px;line-height:1.65;color:var(--muted);margin:6px 0 0}
+body[data-mode="ko"] #v-doc .t-en,body[data-mode="ko"] #v-doc h4 small,body[data-mode="ko"] #v-doc .doc-head .sub{display:none}
+body[data-mode="en"] #v-doc .t-ko{display:none}
+body[data-mode="en"] #v-doc .t-en{font-size:15.5px;color:var(--ink);margin-top:0}
+.dq{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
+.dq .n{font-family:var(--serif);font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;font-size:16px;grid-row:span 4}
+.dq .ty{justify-self:start;font-size:10.5px;font-weight:600;letter-spacing:.06em;border-radius:999px;padding:1px 8px;background:var(--soft);color:var(--accent);font-family:var(--kr)}
+.dq .t-ko{font-weight:500}
+.dq .hint{font-family:var(--kr);font-size:12.5px;color:var(--faint);margin:4px 0 0}
+body[data-tab="doc"]:not(.listening) .bar{display:none}
+.tts{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.tts .r1{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tts .r2{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;align-items:center}
+.tts .lbl{font-size:12px;font-weight:600;color:var(--muted);font-family:var(--kr)}
+.tts select{min-width:0;width:100%;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:7px 8px;font-size:16px;font-family:var(--sans)}
+.tts #ttsRate{width:auto;justify-self:start}
+.tts #ttsPlay{min-width:128px}
+.tts .meta{margin:0;line-height:1.5}
+.say{border:0;background:none;color:var(--accent);padding:6px;margin:-6px -6px -6px 0;border-radius:8px;display:inline-flex;flex:none;cursor:pointer}
+.say:hover{background:var(--soft)}
+.group.with-say,.dsec h4{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.group.with-say span,.dsec h4 span{min-width:0}
+[data-sec]{border-radius:10px;transition:background-color .3s,box-shadow .3s}
+[data-sec].reading{background:color-mix(in srgb,var(--accent) 9%,transparent);box-shadow:0 0 0 8px color-mix(in srgb,var(--accent) 9%,transparent)}
+.doc-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 26px}
 .code{display:flex;gap:8px;margin-top:8px}
 .code input{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:9px 10px;font-size:16px}
 
@@ -174,6 +222,7 @@ body[data-mode="en"] .bul .en{font-size:15px;color:var(--ink)}
         <a href="#words" data-tab="words">용어</a>
         <a href="#recap" data-tab="recap">요약</a>
         <a href="#study" data-tab="study">복습</a>
+        <a href="#doc" data-tab="doc">문서 요약</a>
       </nav>
     </div>
   </header>
@@ -237,6 +286,34 @@ body[data-mode="en"] .bul .en{font-size:15px;color:var(--ink)}
       <div class="btnrow block"><button class="btn primary" id="studyBtn">복습 가이드 만들기</button><span class="meta" id="studyMsg"></span></div>
       <div id="studyWrap"></div>
     </section>
+
+    <section class="view" id="v-doc" hidden>
+      <p class="eyebrow">Document · 문서 요약</p>
+      <h2>긴 글 요약과 토론 질문</h2>
+      <p class="lede">읽기 자료, 강의 녹취록, 논문 같은 긴 텍스트 파일을 올리면 한국어와 영어로 자세히 요약하고, 수업에서 쓸 수 있는 토론 질문을 만들어 드립니다.</p>
+
+      <div id="docForm">
+        <label class="drop" id="drop" for="docFile">
+          <input type="file" id="docFile" accept=".txt,.md,.markdown,.text,.srt,.vtt,.csv,.rtf,text/plain">
+          <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14 3v5h5M12 18v-6M9.5 14.5 12 12l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          <b id="dropTitle">텍스트 파일 선택 또는 끌어다 놓기</b>
+          <span id="dropSub">.txt · .md · .srt · .vtt — 최대 약 1,500,000자</span>
+        </label>
+        <p class="or"><span>또는 직접 붙여넣기</span></p>
+        <textarea id="docText" class="docbox" placeholder="여기에 글을 붙여넣으세요 · Paste text here" aria-label="Document text"></textarea>
+        <p class="meta" id="docCount">0자</p>
+        <label class="flabel" for="docFocus">요청 사항 (선택)</label>
+        <input id="docFocus" class="finput" maxlength="300" placeholder="예: 3장 중심으로, 시험 대비용, 질문은 영어 토론용으로" autocomplete="off">
+        <div class="btnrow" style="margin-top:14px">
+          <button class="btn primary" id="docBtn">요약하고 토론 질문 만들기</button>
+          <button class="btn" id="docReset">지우기</button>
+        </div>
+        <p class="meta" id="docMsg" aria-live="polite" style="margin-top:10px"></p>
+        <div class="prog" id="docProg" hidden><i id="docBar"></i></div>
+      </div>
+
+      <div id="docOut"></div>
+    </section>
   </main>
 </div>
 
@@ -277,7 +354,7 @@ body[data-mode="en"] .bul .en{font-size:15px;color:var(--ink)}
   applyPrefs();
 
   /* ---------- tabs ---------- */
-  const tabs = ["live","words","recap","study"];
+  const tabs = ["live","words","recap","study","doc"];
   function route(){
     const t = tabs.includes(location.hash.slice(1)) ? location.hash.slice(1) : "live";
     tabs.forEach(n => $("v-" + n).hidden = n !== t);
@@ -490,6 +567,7 @@ body[data-mode="en"] .bul .en{font-size:15px;color:var(--ink)}
   function setStatus(){
     const pend = queue.length + inFlight;
     const on = want;
+    document.body.classList.toggle("listening", on);
     $("micBtn").classList.toggle("on", on);
     $("micLbl").textContent = on ? "멈추기" : (S.lines.length ? "다시 듣기" : "수업 시작");
     $("pill").classList.toggle("live", on && listening);
@@ -595,6 +673,305 @@ body[data-mode="en"] .bul .en{font-size:15px;color:var(--ink)}
   addEventListener("resize", placeBar);
   if (window.ResizeObserver) new ResizeObserver(placeBar).observe(bar);
   placeBar();
+
+  /* ---------- document summary + discussion questions ---------- */
+  const DOC_MAX = 1500000;
+  let docName = "", docBusy = false, docResult = null, docResultName = "";
+  try { const raw = ls.get("lb-doc", ""); if (raw) { const o = JSON.parse(raw); docResult = o.result || null; docResultName = o.name || ""; } } catch {}
+
+  function countDoc(){
+    const t = $("docText").value;
+    const words = (t.match(/\S+/g) || []).length;
+    $("docCount").textContent = t ? `${t.length.toLocaleString()}자 · 약 ${words.toLocaleString()} 단어` + (t.length > DOC_MAX ? ` · 앞부분 ${DOC_MAX.toLocaleString()}자만 사용됩니다` : "") : "0자";
+  }
+  $("docText").addEventListener("input", () => { if (!$("docText").value) setDropLabel(""); countDoc(); });
+
+  function setDropLabel(name){
+    docName = name;
+    $("dropTitle").textContent = name || "텍스트 파일 선택 또는 끌어다 놓기";
+    $("dropSub").textContent = name ? "다른 파일을 고르려면 다시 누르세요" : ".txt · .md · .srt · .vtt — 최대 약 1,500,000자";
+  }
+  function cleanSubtitles(t){
+    // .srt / .vtt: drop cue numbers, timestamps and the WEBVTT header, keep the words.
+    return t.replace(/^WEBVTT.*$/m, "")
+      .replace(/^\d+\s*$/gm, "")
+      .replace(/^\d{1,2}:\d{2}(:\d{2})?[.,]\d{1,3}\s*-->.*$/gm, "")
+      .replace(/<[^>]+>/g, "")
+      .replace(/\n{2,}/g, "\n").trim();
+  }
+  async function readFileText(file){
+    const buf = await file.arrayBuffer();
+    let text = new TextDecoder("utf-8").decode(buf);
+    // Older Korean files are often saved as EUC-KR; retry when UTF-8 gives broken characters.
+    if ((text.match(/�/g) || []).length > 20) { try { text = new TextDecoder("euc-kr").decode(buf); } catch {} }
+    if (/\.(srt|vtt)$/i.test(file.name)) text = cleanSubtitles(text);
+    return text;
+  }
+  async function takeFile(file){
+    if (!file) return;
+    if (/\.(pdf|docx?|pptx?|hwp|pages)$/i.test(file.name)) { $("docMsg").textContent = "PDF, Word, 한글 파일은 아직 지원하지 않습니다. 파일을 열어 텍스트를 복사해 붙여넣거나 .txt로 저장해 주세요."; return; }
+    if (file.size > 8 * 1024 * 1024) { $("docMsg").textContent = "파일이 너무 큽니다 (최대 약 8MB)."; return; }
+    try {
+      $("docText").value = await readFileText(file);
+      setDropLabel(file.name); countDoc(); $("docMsg").textContent = "";
+    } catch { $("docMsg").textContent = "파일을 읽을 수 없습니다. 텍스트 파일인지 확인해 주세요."; }
+  }
+  $("docFile").addEventListener("change", e => { takeFile(e.target.files[0]); e.target.value = ""; });
+  const drop = $("drop");
+  ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => takeFile(e.dataTransfer.files[0]));
+
+  function setProg(frac){ $("docProg").hidden = frac == null; $("docBar").style.width = Math.round((frac || 0) * 100) + "%"; }
+
+  $("docBtn").onclick = async () => {
+    if (docBusy) return;
+    const text = $("docText").value.trim();
+    if (text.length < 200) { $("docMsg").textContent = "요약할 글이 너무 짧습니다. 파일을 올리거나 글을 붙여넣어 주세요."; return; }
+    docBusy = true; $("docBtn").disabled = true;
+    const t0 = Date.now();
+    let stage = "보내는 중…";
+    const tick = setInterval(() => { $("docMsg").textContent = `${stage} · ${Math.round((Date.now() - t0) / 1000)}초`; }, 1000);
+    setProg(0.03);
+    try {
+      const r = await fetch("/api/document", {
+        method: "POST",
+        headers: {"content-type": "application/json", "x-class-code": classCode},
+        body: JSON.stringify({text: text.slice(0, DOC_MAX), focus: $("docFocus").value.trim(), name: docName})
+      });
+      if (r.status === 401) { askCode(); throw {code: "code"}; }
+      if (r.status === 429) throw {code: "busy"};
+      if (!r.ok) { let j = {}; try { j = await r.json(); } catch {} throw {code: "server", status: r.status, detail: j.detail || j.error}; }
+      // The server sends one JSON line per progress step, then the result.
+      const reader = r.body.getReader(), dec = new TextDecoder();
+      let buf = "", result = null, expect = 9000, base = 0.08;
+      const handle = line => {
+        if (!line.trim()) return;
+        const m = JSON.parse(line);
+        if (m.stage === "reading") { base = 0.5; stage = `긴 글을 나눠 읽는 중 (${m.done}/${m.total})`; setProg(0.05 + 0.45 * (m.done / m.total)); }
+        else if (m.stage === "writing") {
+          if (m.expect) expect = m.expect;
+          stage = "요약과 질문을 쓰는 중";
+          setProg(Math.min(0.97, base + (0.97 - base) * Math.min(1, (m.chars || 0) / expect)));
+        }
+        else if (m.error) throw {code: "server", detail: m.error};
+        else if (m.result) result = m.result;
+      };
+      for (;;) {
+        const {value, done} = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, {stream: true});
+        let nl; while ((nl = buf.indexOf("\n")) >= 0) { handle(buf.slice(0, nl)); buf = buf.slice(nl + 1); }
+      }
+      handle(buf);
+      if (!result) throw {code: "server", detail: "결과를 받지 못했습니다"};
+      docResult = result; docResultName = docName;
+      ls.set("lb-doc", JSON.stringify({name: docName, result}));
+      renderDoc();
+      $("docMsg").textContent = `완료 · ${Math.round((Date.now() - t0) / 1000)}초`;
+      setProg(null);
+      $("docOut").scrollIntoView({behavior: "smooth", block: "start"});
+    } catch (e) {
+      setProg(null);
+      $("docMsg").innerHTML = e.code === "busy" ? "요청이 너무 많습니다. 1분 뒤에 다시 시도하세요."
+        : e.code === "code" ? "수업 코드를 입력한 뒤 다시 눌러 주세요."
+        : e.code === "server" && /[가-힣]/.test(e.detail || "") ? esc(e.detail)
+        : e.code === "server" ? explain(e.status, e.detail).replace("번역 서버 오류입니다", "요약 서버 오류입니다")
+        : "서버에 연결할 수 없습니다. 인터넷 연결을 확인하고 다시 시도하세요.";
+    } finally { clearInterval(tick); docBusy = false; $("docBtn").disabled = false; }
+  };
+
+  $("docReset").onclick = () => {
+    $("docText").value = ""; $("docFocus").value = ""; setDropLabel(""); countDoc();
+    $("docMsg").textContent = ""; docResult = null; ls.del("lb-doc"); renderDoc();
+  };
+
+
+  /* ---------- read aloud (built-in device voices, free) ---------- */
+  const synth = ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window) ? window.speechSynthesis : null;
+  // Voice names that are female / male on iPhone, Mac, Windows, Chrome and Android.
+  const FEMALE = /female|woman|yuna|sora|heami|sunhi|seoyeon|jimin|yujin|google 한국의|samantha|\bava\b|allison|susan|victoria|karen|moira|tessa|fiona|serena|zira|\baria\b|jenny|michelle|emma|nora|kate|joanna|salli|kimberly|hazel|libby|sonia|natasha|catherine|google us english|uk english female|zoe|evan?gel|nicky|shelley|flo\b|sandy/i;
+  const MALE = /\bmale\b|\bman\b|daniel|\balex\b|fred|\btom\b|aaron|arthur|david|\bmark\b|\bguy\b|injoon|hyunsu|bongjin|gookmin|minsu|jinho|rishi|reed|eddy|grandpa|rocko|ralph|albert|bruce|junior|oliver|ryan|eric|christopher|brian|george|james|uk english male|nathan|gordon|lee\b/i;
+  const isFemale = v => !!v && FEMALE.test(v.name);
+  let ttsLang = ls.get("lb-tts-lang", "") || (mode === "en" ? "en" : "ko");
+  let ttsRate = parseFloat(ls.get("lb-tts-rate", "1")) || 1;
+  let ttsQ = [], ttsI = 0, ttsOn = false, ttsGen = 0, ttsStopSec = Infinity, ttsSec = -1, ttsQSec = Infinity;
+
+  function voicesFor(lang){
+    if (!synth) return [];
+    const score = v => (isFemale(v) ? 100 : MALE.test(v.name) ? -100 : 0)
+      + (/premium|enhanced|natural|neural|online|siri/i.test(v.name) ? 10 : 0)
+      + (/^(ko-kr|en-us)$/i.test(v.lang.replace("_", "-")) ? 5 : 0) + (v.localService ? 1 : 0);
+    return synth.getVoices()
+      .filter(v => v.lang && v.lang.toLowerCase().replace("_", "-").startsWith(lang))
+      .sort((a, b) => score(b) - score(a));
+  }
+  function pickVoice(lang){
+    const list = voicesFor(lang), saved = ls.get("lb-tts-voice-" + lang, "");
+    return list.find(v => v.name === saved) || list[0] || null;
+  }
+  function ttsMessage(){
+    const m = $("ttsMsg"); if (!m) return;
+    if (!synth) { m.textContent = "이 브라우저는 읽어주기를 지원하지 않습니다. Safari나 Chrome을 사용해 주세요."; return; }
+    const v = pickVoice(ttsLang);
+    const where = isIOS() ? "iPhone 설정 → 손쉬운 사용 → 읽기 및 말하기 → 음성"
+      : /Mac/.test(navigator.platform) ? "Mac 시스템 설정 → 손쉬운 사용 → 읽기 및 말하기 → 시스템 음성 → 음성 관리"
+      : "기기 설정의 음성(텍스트 음성 변환)";
+    if (!v) m.textContent = `${ttsLang === "ko" ? "한국어" : "영어"} 목소리가 이 기기에 없습니다. ${where}에서 ${ttsLang === "ko" ? "한국어 (예: Yuna)" : "영어 (예: Samantha)"}를 추가해 주세요.`;
+    else if (!isFemale(v)) m.textContent = `여성 목소리를 찾지 못해 '${v.name}'(으)로 읽습니다. 위 목록에서 다른 목소리를 고르거나 ${where}에서 여성 목소리를 추가할 수 있습니다.`;
+    else m.textContent = ttsOn ? "읽는 중입니다. 🔊 버튼을 누르면 그 부분부터 읽습니다." : "각 부분 옆의 🔊 버튼을 누르면 그 부분부터 들을 수 있습니다.";
+  }
+  function fillVoices(){
+    const sel = $("ttsVoice"); if (!sel) return;
+    const list = voicesFor(ttsLang), cur = pickVoice(ttsLang);
+    sel.innerHTML = list.length
+      ? list.map(v => `<option value="${esc(v.name)}"${cur && v.name === cur.name ? " selected" : ""}>${esc(v.name)}${isFemale(v) ? " · 여성" : ""}</option>`).join("")
+      : `<option>목소리 없음</option>`;
+    sel.disabled = !list.length;
+    ttsMessage();
+  }
+  if (synth) { synth.onvoiceschanged = fillVoices; }
+
+  // Text to speak: drop "(English term)" in Korean so the Korean voice reads smoothly.
+  const prep = (t, lang) => String(t || "").replace(lang === "ko" ? /\s*\([^)]*[A-Za-z][^)]*\)/g : /$^/, "").replace(/\s+/g, " ").trim();
+  function sentences(t){
+    const out = [];
+    for (let s of (t.match(/[^]+?(?:[.!?。]+["')\]]*(?=\s|$)|$)/g) || [])) {
+      s = s.trim(); if (!s) continue;
+      while (s.length > 220) {                       // very long sentence: break at a comma
+        let cut = s.lastIndexOf(", ", 200); if (cut < 60) cut = s.lastIndexOf(" ", 200); if (cut < 60) cut = 200;
+        out.push(s.slice(0, cut + 1).trim()); s = s.slice(cut + 1).trim();
+      }
+      if (s) out.push(s);
+    }
+    return out;
+  }
+  function buildQueue(lang){
+    const d = docResult || {}, q = [];
+    const L = o => o ? (lang === "ko" ? (o.ko || o.en) : (o.en || o.ko)) : "";
+    const add = (t, sec) => sentences(prep(t, lang)).forEach(x => q.push({t: x, sec}));
+    const secs = d.sections || [], kp = d.key_points || [], qs = d.questions || [];
+    add(lang === "ko" ? (d.title_ko || d.title_en) : (d.title_en || d.title_ko), 0);
+    if (d.overview) add(L(d.overview), 0);
+    secs.forEach((s, i) => { add(lang === "ko" ? (s.heading_ko || s.heading_en) : (s.heading_en || s.heading_ko), i + 1); add(L(s), i + 1); });
+    if (kp.length) { add(lang === "ko" ? "핵심 포인트." : "Key points.", secs.length + 1); kp.forEach(k => add(L(k), secs.length + 1)); }
+    if (qs.length) { add(lang === "ko" ? "토론 질문." : "Discussion questions.", secs.length + 2); qs.forEach((x, i) => add((lang === "ko" ? `${i + 1}번. ` : `Question ${i + 1}. `) + L(x), secs.length + 2)); }
+    ttsQSec = secs.length + 2;
+    return q;
+  }
+  function highlight(sec){
+    if (sec === ttsSec) return; ttsSec = sec;
+    document.querySelectorAll("#docOut [data-sec]").forEach(el => el.classList.toggle("reading", +el.dataset.sec === sec));
+    const el = document.querySelector(`#docOut [data-sec="${sec}"]`);
+    if (el && sec >= 0) el.scrollIntoView({behavior: "smooth", block: "nearest"});
+  }
+  function ttsUI(){
+    const play = $("ttsPlay"); if (!play) return;
+    play.textContent = ttsOn ? "❚❚ 일시정지" : (ttsI > 0 && ttsQ.length ? "▶ 이어 듣기" : "▶ 요약 듣기");
+    play.disabled = !synth;
+    $("ttsStop").hidden = !(ttsOn || ttsI > 0);
+    document.querySelectorAll("#tts [data-tl]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.tl === ttsLang)));
+    ttsMessage();
+  }
+  function speakNext(gen){
+    if (gen !== ttsGen || !ttsOn) return;
+    const item = ttsQ[ttsI];
+    if (!item || item.sec >= ttsStopSec) { ttsHalt(); return; }
+    highlight(item.sec);
+    const u = new SpeechSynthesisUtterance(item.t);
+    const v = pickVoice(ttsLang);
+    if (v) { u.voice = v; u.lang = v.lang; } else u.lang = ttsLang === "ko" ? "ko-KR" : "en-US";
+    u.rate = ttsRate; u.pitch = 1;
+    u.onend = () => { if (gen !== ttsGen) return; ttsI++; speakNext(gen); };
+    u.onerror = e => { if (gen !== ttsGen || e.error === "interrupted" || e.error === "canceled") return; ttsI++; speakNext(gen); };
+    synth.speak(u);
+  }
+  function ttsPlay(fromSec){
+    if (!synth || !docResult) return;
+    if (fromSec != null || !ttsQ.length || ttsI >= ttsQ.length) {
+      ttsQ = buildQueue(ttsLang);
+      const from = fromSec == null ? 0 : fromSec;
+      ttsI = Math.max(0, ttsQ.findIndex(x => x.sec === from));
+      ttsStopSec = from >= ttsQSec ? Infinity : ttsQSec;   // the main button reads the summary, not the questions
+    }
+    ttsGen++; synth.cancel(); ttsOn = true; ttsSec = -1; ttsUI();
+    if (typeof want !== "undefined" && want) $("ttsMsg").textContent = "수업 듣기가 켜져 있어 읽는 소리가 자막에 섞일 수 있습니다.";
+    speakNext(ttsGen);
+  }
+  function ttsPause(){ ttsGen++; ttsOn = false; if (synth) synth.cancel(); ttsUI(); }
+  function ttsHalt(){ ttsGen++; ttsOn = false; ttsI = 0; ttsQ = []; if (synth) synth.cancel(); highlight(-1); ttsUI(); }
+  function setupTTS(){
+    $("ttsPlay").onclick = () => ttsOn ? ttsPause() : ttsPlay(null);
+    $("ttsStop").onclick = ttsHalt;
+    document.querySelectorAll("#tts [data-tl]").forEach(b => b.onclick = () => {
+      if (b.dataset.tl === ttsLang) return;
+      ttsHalt(); ttsLang = b.dataset.tl; ls.set("lb-tts-lang", ttsLang); fillVoices(); ttsUI();
+    });
+    $("ttsVoice").onchange = e => { ls.set("lb-tts-voice-" + ttsLang, e.target.value); ttsMessage(); };
+    const rate = $("ttsRate");
+    rate.value = [...rate.options].some(o => +o.value === ttsRate) ? String(ttsRate) : "1";
+    rate.onchange = e => { ttsRate = parseFloat(e.target.value) || 1; ls.set("lb-tts-rate", String(ttsRate)); };
+    document.querySelectorAll("#docOut .say").forEach(b => { b.hidden = !synth; b.onclick = () => ttsPlay(+b.dataset.from); });
+    fillVoices(); ttsUI();
+    setTimeout(fillVoices, 600);            // some browsers list voices a moment later
+  }
+  addEventListener("pagehide", () => { if (synth) synth.cancel(); });
+
+  const both = (o, cls = "") => `${o && o.ko ? `<p class="t-ko ${cls}">${esc(o.ko)}</p>` : ""}${o && o.en ? `<p class="t-en ${cls}">${esc(o.en)}</p>` : ""}`;
+  const SAY_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`;
+  const sayBtn = (sec, label) => `<button class="say" data-from="${sec}" aria-label="${label} 듣기" title="여기부터 듣기">${SAY_ICON}</button>`;
+  function renderDoc(){
+    ttsHalt();
+    const d = docResult;
+    if (!d) { $("docOut").innerHTML = ""; return; }
+    const secs = Array.isArray(d.sections) ? d.sections : [];
+    const kp = Array.isArray(d.key_points) ? d.key_points : [];
+    const terms = Array.isArray(d.terms) ? d.terms : [];
+    const qs = Array.isArray(d.questions) ? d.questions : [];
+    const kpSec = secs.length + 1, qSec = secs.length + 2;
+    $("docOut").innerHTML =
+      `<div class="doc-head"><p class="eyebrow">${esc(docResultName || "Document")}</p><h3>${esc(d.title_ko || d.title_en || "문서 요약")}</h3>${d.title_en && d.title_ko ? `<p class="sub">${esc(d.title_en)}</p>` : ""}</div>` +
+      `<div class="tts" id="tts">
+        <div class="r1">
+          <button class="btn primary" id="ttsPlay"></button>
+          <button class="btn" id="ttsStop" hidden>정지</button>
+          <div class="seg" role="group" aria-label="읽기 언어">
+            <button data-tl="ko" aria-pressed="false">한국어</button><button data-tl="en" aria-pressed="false">English</button>
+          </div>
+        </div>
+        <div class="r2">
+          <label class="lbl" for="ttsVoice">목소리</label><select id="ttsVoice"></select>
+          <label class="lbl" for="ttsRate">속도</label>
+          <select id="ttsRate"><option value="0.8">느리게</option><option value="1">보통</option><option value="1.15">조금 빠르게</option><option value="1.3">빠르게</option></select>
+        </div>
+        <p class="meta" id="ttsMsg"></p>
+      </div>` +
+      `<div class="doc-actions"><button class="btn" id="docCopy">전체 복사</button><button class="btn" id="docCopyQ">토론 질문만 복사</button><span class="meta" id="docCopyMsg"></span></div>` +
+      (d.overview ? `<div class="block" data-sec="0"><p class="group with-say"><span>Overview · 한눈에 보기</span>${sayBtn(0, "한눈에 보기")}</p>${both(d.overview)}</div>` : "") +
+      (secs.length ? `<div class="block"><p class="group">Detailed summary · 자세한 요약</p>${secs.map((s, i) =>
+        `<div class="dsec" data-sec="${i + 1}"><h4><span>${esc(s.heading_ko || s.heading_en)}${s.heading_en && s.heading_ko ? `<small>${esc(s.heading_en)}</small>` : ""}</span>${sayBtn(i + 1, "이 부분")}</h4>${both(s)}</div>`).join("")}</div>` : "") +
+      (kp.length ? `<div class="block" data-sec="${kpSec}"><p class="group with-say"><span>Key points · 핵심 포인트</span>${sayBtn(kpSec, "핵심 포인트")}</p><ul class="bul">${kp.map(k => `<li><span class="ko-t">${esc(k.ko)}</span>${k.en ? `<span class="en">${esc(k.en)}</span>` : ""}</li>`).join("")}</ul></div>` : "") +
+      (terms.length ? `<div class="block"><p class="group">Key terms · 핵심 용어</p><div class="terms">${terms.map(t =>
+        `<div class="term"><div class="row"><b>${esc(t.term)}</b><span class="k">${esc(t.ko)}</span></div>${t.def_ko ? `<p>${esc(t.def_ko)}</p>` : ""}</div>`).join("")}</div></div>` : "") +
+      (qs.length ? `<div class="block" data-sec="${qSec}"><p class="group with-say"><span>Discussion questions · 토론 질문</span>${sayBtn(qSec, "토론 질문")}</p>${qs.map((q, i) =>
+        `<div class="dq"><span class="n">${i + 1}</span>${q.type ? `<span class="ty">${esc(q.type)}</span>` : ""}${both(q)}${q.hint_ko ? `<p class="hint">실마리: ${esc(q.hint_ko)}</p>` : ""}</div>`).join("")}</div>` : "");
+    setupTTS();
+    const copy = async (text) => {
+      try { await navigator.clipboard.writeText(text); $("docCopyMsg").textContent = "복사했습니다."; }
+      catch { $("docCopyMsg").textContent = "복사할 수 없습니다. 직접 선택해 주세요."; }
+    };
+    const pair = o => [o && o.ko, o && o.en].filter(Boolean).join("\n");
+    $("docCopy").onclick = () => copy([
+      [d.title_ko, d.title_en].filter(Boolean).join(" / "),
+      "■ 한눈에 보기 / Overview\n" + pair(d.overview),
+      "■ 자세한 요약 / Detailed summary\n" + secs.map(s => `▶ ${[s.heading_ko, s.heading_en].filter(Boolean).join(" / ")}\n${pair(s)}`).join("\n\n"),
+      kp.length ? "■ 핵심 포인트 / Key points\n" + kp.map(k => "• " + pair(k).replace(/\n/g, "\n  ")).join("\n") : "",
+      terms.length ? "■ 핵심 용어 / Key terms\n" + terms.map(t => `• ${t.term} (${t.ko}) – ${t.def_ko}`).join("\n") : "",
+      qs.length ? "■ 토론 질문 / Discussion questions\n" + qs.map((q, i) => `${i + 1}. ${pair(q).replace(/\n/g, "\n   ")}`).join("\n") : ""
+    ].filter(Boolean).join("\n\n"));
+    $("docCopyQ").onclick = () => copy(qs.map((q, i) => `${i + 1}. ${pair(q).replace(/\n/g, "\n   ")}`).join("\n"));
+  }
+  renderDoc();
 
   function renderAll(){
     $("title").textContent = S.title || "오늘의 강의";
