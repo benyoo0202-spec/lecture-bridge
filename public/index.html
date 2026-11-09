@@ -335,34 +335,63 @@ body[data-mode="en"] .bul .en{font-size:15px;color:var(--ink)}
   $("jump").onclick = () => { scrollDown(); $("jump").hidden = true; };
   addEventListener("scroll", () => { if (nearBottom()) $("jump").hidden = true; }, {passive: true});
 
-  /* ---------- translation queue ---------- */
-  const queue = []; let working = false, sinceSummary = 0, fails = 0;
+  /* ---------- translation: up to 3 lines at once, Korean streams in as it's written ---------- */
+  const queue = []; let inFlight = 0, sinceSummary = 0, fails = 0;
+  const MAX_PARALLEL = 3;
+  let paintT = 0;
+  const paint = () => { if (!paintT) paintT = requestAnimationFrame(() => { paintT = 0; renderCaps(); }); };
   function addLine(en){
     const line = {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), en, ko: ""};
     S.lines.push(line); save(); renderCaps();
     queue.push(line); pump();
   }
-  async function pump(){
-    if (working) return; working = true;
-    while (queue.length) {
-      const line = queue.shift();
-      const idx = S.lines.indexOf(line);
-      const context = S.lines.slice(Math.max(0, idx - 3), idx).map(l => l.en).join(" ");
-      try {
-        const r = await api("/api/translate", {text: line.en, context});
-        line.ko = String(r.ko || "").trim(); line.err = false; delete line.retry; fails = 0;
-        if (line.ko) { sinceSummary++; if (sinceSummary >= 8) summarize(false); }
-      } catch (e) {
-        line.err = true; line.retry = true;
-        if (e.code === "busy") note("번역 요청이 너무 많습니다. 잠시 후 계속됩니다. · Translation is busy, retrying shortly.");
-        else if (e.code !== "code" && ++fails >= 3) note("번역 서버에 연결할 수 없습니다. 인터넷 연결을 확인하세요. 영어 자막은 계속 나옵니다.");
-      }
-      save(); renderCaps(); setStatus();
+  function explain(status, detail){
+    const d = String(detail || "");
+    if (/401|invalid x-api-key|authentication/i.test(d)) return "서버의 API 키가 올바르지 않습니다. Render → Environment → ANTHROPIC_API_KEY를 확인하세요. (API key is wrong)";
+    if (/credit balance|billing/i.test(d)) return "API 크레딧이 부족합니다. console.anthropic.com의 Billing에서 크레딧을 추가하세요. (Out of API credit)";
+    if (/404|not_found|model/i.test(d)) return "번역 모델 이름을 찾을 수 없습니다. Render의 TRANSLATE_MODEL 설정을 확인하세요. (Model not found)";
+    if (/429|rate|overloaded|529/i.test(d)) return "Claude가 잠시 바쁩니다. 곧 다시 시도합니다. (Claude is busy)";
+    if (status === 503) return "서버에 API 키가 없습니다. Render → Environment에 ANTHROPIC_API_KEY를 추가하세요.";
+    return "번역 서버 오류입니다. 잠시 후 다시 시도합니다." + (d ? ` <span class="meta">(${esc(d.slice(0, 160))})</span>` : "");
+  }
+  async function translateLine(line){
+    const idx = S.lines.indexOf(line);
+    const context = S.lines.slice(Math.max(0, idx - 2), idx).map(l => l.en).join(" ");
+    line.err = false; line.ko = ""; paint();
+    const r = await fetch("/api/translate", {method: "POST", headers: {"content-type": "application/json", "x-class-code": classCode}, body: JSON.stringify({text: line.en, context})});
+    if (r.status === 401) { askCode(); throw {code: "code"}; }
+    if (r.status === 429) throw {code: "busy"};
+    if (!r.ok) { let j = {}; try { j = await r.json(); } catch {} throw {code: "server", status: r.status, detail: j.detail}; }
+    const reader = r.body.getReader(), dec = new TextDecoder();
+    let text = "";
+    for (;;) {
+      const {value, done} = await reader.read();
+      if (done) break;
+      text += dec.decode(value, {stream: true});
+      line.ko = text.trimStart(); paint();
     }
-    working = false;
+    text += dec.decode();
+    line.ko = text.trim();
+    if (!line.ko) throw {code: "server", detail: "empty answer"};
+  }
+  function pump(){
+    while (inFlight < MAX_PARALLEL && queue.length) {
+      const line = queue.shift(); inFlight++;
+      translateLine(line).then(() => {
+        delete line.retry; fails = 0; note("");
+        sinceSummary++; if (sinceSummary >= 8) summarize(false);
+      }).catch(e => {
+        line.err = true; line.retry = true; line.ko = "";
+        if (e.code === "busy") note("번역 요청이 너무 많습니다. 잠시 후 계속됩니다. · Translation is busy, retrying shortly.");
+        else if (e.code === "server") note(explain(e.status, e.detail));
+        else if (e.code !== "code" && ++fails >= 3) note("번역 서버에 연결할 수 없습니다. 인터넷 연결을 확인하세요. 영어 자막은 계속 나옵니다.");
+      }).finally(() => {
+        inFlight--; save(); renderCaps(); setStatus(); pump();
+      });
+    }
   }
   function retryFailed(){ S.lines.filter(l => l.retry && !queue.includes(l)).forEach(l => { l.err = false; queue.push(l); }); renderCaps(); pump(); }
-  setInterval(() => { if (navigator.onLine && S.lines.some(l => l.retry) && !working) retryFailed(); }, 20000);
+  setInterval(() => { if (navigator.onLine && S.lines.some(l => l.retry) && inFlight === 0) retryFailed(); }, 20000);
 
   /* ---------- speech recognition ---------- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -385,8 +414,9 @@ body[data-mode="en"] .bul .en{font-size:15px;color:var(--ink)}
     if (!t) return;
     buf += " " + t;
     const words = buf.trim().split(" ").length;
-    if (/[.!?]$/.test(buf.trim()) || words >= 8) flush();
-    else { clearTimeout(bufT); bufT = setTimeout(flush, 1500); }
+    // Send sooner: at a sentence end, after 6 words, or after a short pause.
+    if (/[.!?]$/.test(buf.trim()) || words >= 6) flush();
+    else { clearTimeout(bufT); bufT = setTimeout(flush, 800); }
   }
 
   function makeRec(){
@@ -444,7 +474,7 @@ body[data-mode="en"] .bul .en{font-size:15px;color:var(--ink)}
   });
 
   function setStatus(){
-    const pend = queue.length + (working ? 1 : 0);
+    const pend = queue.length + inFlight;
     const on = want;
     $("micBtn").classList.toggle("on", on);
     $("micLbl").textContent = on ? "멈추기" : (S.lines.length ? "다시 듣기" : "수업 시작");
