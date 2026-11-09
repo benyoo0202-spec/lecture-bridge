@@ -1,0 +1,14 @@
+{
+  "name": "lecture-bridge",
+  "version": "1.0.0",
+  "description": "Live Korean captions, summaries and study guides for English university lectures.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

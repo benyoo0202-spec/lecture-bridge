@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#161D28">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lecture Bridge">
+<meta name="description" content="Live Korean captions and summaries for English university lectures.">
+<title>Lecture Bridge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+<style>
+/* Layout: one narrow reading column, white header + tabs on top, captions flowing down, a listen bar pinned to the bottom. */
+:root{
+  --bg:#F2F4F7; --surface:#FFFFFF; --ink:#161D28; --muted:#5E6878; --faint:#8A93A1;
+  --line:#E0E4EA; --soft:#EAEFF5; --accent:#2B5A8E; --accent-ink:#FFFFFF;
+  --dark:#161D28; --dark-ink:#FFFFFF; --live:#C8372D; --pending:#9AA3B0;
+  --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans:"IBM Plex Sans", "Noto Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --kr:"Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --cap:20px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0F141B; --surface:#161D28; --ink:#E7EBF1; --muted:#9AA4B3; --faint:#717C8C;
+  --line:#253042; --soft:#1C2533; --accent:#86AEDD; --accent-ink:#0E1520;
+  --dark:#E7EBF1; --dark-ink:#161D28; --live:#FF6D60; --pending:#5D6878; color-scheme:dark}}
+
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.col{max-width:560px;margin:0 auto;min-height:100vh;min-height:100dvh;border-inline:1px solid var(--line);background:var(--bg)}
+.pad{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header{position:sticky;top:0;padding-top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:14px}
+.brand{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:500;color:var(--muted);min-width:0}
+.brand svg{flex:none;color:var(--accent)}
+.brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.pill i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.live{color:var(--live);border-color:color-mix(in srgb,var(--live) 40%,var(--line))}
+.pill.live i{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+h1{font-family:var(--serif);font-weight:700;font-size:22px;line-height:1.25;margin:6px 0 10px;text-wrap:balance}
+nav{display:flex;gap:22px;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav a{position:relative;padding:8px 0 10px;font-size:14px;color:var(--muted);text-decoration:none;white-space:nowrap;font-family:var(--kr)}
+nav a[aria-current="page"]{color:var(--ink);font-weight:500}
+nav a[aria-current="page"]::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--accent)}
+
+.tools{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px;border-bottom:1px solid var(--line);background:var(--soft)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:var(--surface);overflow:hidden}
+.seg button{border:0;background:none;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--muted);font-family:var(--kr)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.chip{border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:5px 12px;font-size:12.5px;font-weight:500;display:inline-flex;gap:6px;align-items:center}
+.chip small{font-size:10.5px;color:var(--faint);font-weight:600}
+.wake{font-size:11.5px;color:var(--faint);margin-left:auto;align-self:center;font-family:var(--kr)}
+
+main{padding-block:18px calc(var(--barH,90px) + 40px)}
+.view[hidden],[hidden]{display:none!important}
+.eyebrow{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+h2{font-family:var(--serif);font-size:21px;font-weight:700;margin:0 0 6px;text-wrap:balance}
+.lede{color:var(--muted);margin:0 0 18px;font-size:14px;max-width:62ch;font-family:var(--kr)}
+.muted{color:var(--muted);font-size:14px;margin:0;font-family:var(--kr)}
+.meta{font-size:12px;color:var(--faint)}
+.group{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.block{margin-bottom:26px}
+
+/* start card */
+.start{text-align:center;padding:9vh 4px 4vh}
+.start h3{font-family:var(--serif);font-size:20px;margin:0 0 8px;text-wrap:balance}
+.start p{color:var(--muted);margin:0 auto 6px;max-width:36ch;font-size:14px;font-family:var(--kr)}
+.start .en{font-family:var(--sans);font-size:13px;color:var(--faint)}
+.start input{display:block;width:100%;max-width:340px;margin:18px auto 0;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:11px 12px;font-size:16px;font-family:var(--kr);text-align:center}
+.steps{list-style:none;padding:0;margin:22px auto 0;max-width:340px;text-align:left;display:flex;flex-direction:column;gap:8px;font-family:var(--kr);font-size:13.5px;color:var(--muted)}
+.steps li{display:flex;gap:10px}
+.steps b{color:var(--accent);font-variant-numeric:tabular-nums;flex:none}
+
+/* captions */
+#caps{display:flex;flex-direction:column;gap:18px}
+.cap{display:flex;flex-direction:column;gap:4px;animation:in .35s ease-out}
+@keyframes in{from{opacity:.4;transform:translateY(4px)}}
+.cap .ko{font-family:var(--kr);font-size:var(--cap);line-height:1.6;font-weight:500;word-break:keep-all;overflow-wrap:anywhere;color:color-mix(in srgb,var(--ink) 82%,var(--bg))}
+.cap.latest .ko{color:var(--ink)}
+.cap .en{font-size:calc(var(--cap)*.78);color:var(--muted);line-height:1.5}
+.cap .wait{font-family:var(--kr);font-size:calc(var(--cap)*.72);color:var(--pending)}
+body[data-mode="en"] .cap .en{font-size:var(--cap);color:var(--ink)}
+body[data-mode="en"] .cap .ko,body[data-mode="en"] .cap .wait{display:none}
+body[data-mode="ko"] .cap .ko + .en{display:none}
+.interim{font-size:calc(var(--cap)*.78);color:var(--faint);font-style:italic;margin-top:14px}
+.interim:empty{display:none}
+.jump{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--barH,90px) + 12px);z-index:6;border:0;border-radius:999px;background:var(--dark);color:var(--dark-ink);padding:9px 16px;font-size:13px;font-weight:500;font-family:var(--kr);box-shadow:0 4px 14px rgb(0 0 0 / .18)}
+
+/* listen bar */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:7;background:var(--surface);border-top:1px solid var(--line);padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+.bar .in{max-width:560px;margin:0 auto;padding-top:10px;display:flex;align-items:center;gap:12px}
+.mic{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;padding:0 20px;min-height:48px;font-weight:600;font-size:15px;font-family:var(--kr);background:var(--accent);color:var(--accent-ink)}
+.mic.on{background:var(--live);color:#fff}
+.mic svg{flex:none}
+.status{min-width:0;flex:1;font-size:12.5px;color:var(--muted);font-family:var(--kr);line-height:1.4}
+.status b{display:block;color:var(--ink);font-weight:500;font-size:13.5px}
+.level{display:inline-flex;gap:2px;align-items:flex-end;height:14px;margin-right:2px;vertical-align:-2px}
+.level i{width:3px;background:currentColor;border-radius:2px;height:4px}
+.mic.on .level i{animation:lv 1s ease-in-out infinite}
+.mic.on .level i:nth-child(2){animation-delay:.15s}.mic.on .level i:nth-child(3){animation-delay:.3s}
+@keyframes lv{50%{height:14px}}
+
+/* words */
+.search{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:10px 12px;font-family:var(--kr);font-size:16px;margin-bottom:16px}
+.terms{display:flex;flex-direction:column;gap:8px}
+.term{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.term .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.term b{font-family:var(--serif);font-size:16px;font-weight:700}
+.term .k{font-family:var(--kr);font-size:13px;color:var(--accent);font-weight:500;text-align:right}
+.term p{margin:4px 0 0;font-family:var(--kr);font-size:13.5px;color:var(--muted)}
+
+/* recap + study */
+.bul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:8px;font-family:var(--kr);font-size:15.5px;line-height:1.65}
+.bul li::marker{color:var(--accent)}
+.bul .en{display:block;font-family:var(--sans);font-size:13px;color:var(--muted)}
+body[data-mode="ko"] .bul .en{display:none}
+body[data-mode="en"] .bul .ko-t{display:none}
+body[data-mode="en"] .bul .en{font-size:15px;color:var(--ink)}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+.q summary{list-style:none;cursor:pointer;padding:12px 14px;font-family:var(--kr);font-weight:500;display:flex;gap:10px}
+.q summary::-webkit-details-marker{display:none}
+.q summary .n{color:var(--accent);font-variant-numeric:tabular-nums;flex:none}
+.q .a{padding:0 14px 12px 36px;font-family:var(--kr);color:var(--muted);font-size:14.5px}
+.q:not([open]) summary::after{content:"정답 보기";margin-left:auto;flex:none;font-size:11.5px;color:var(--faint);font-weight:400;padding-top:3px}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-size:13.5px;font-weight:500;font-family:var(--kr);min-height:40px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--live)}
+.btn:disabled{opacity:.5;cursor:default}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.note{font-size:13.5px;border-radius:8px;padding:10px 12px;background:var(--soft);font-family:var(--kr);margin-bottom:16px;line-height:1.6}
+.code{display:flex;gap:8px;margin-top:8px}
+.code input{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:9px 10px;font-size:16px}
+
+@media (pointer:coarse){.seg button{min-height:38px;padding-inline:14px}.chip{min-height:38px}nav a{padding-block:10px 12px}}
+@media (max-width:600px){
+  .col{border-inline:0}
+  h1{font-size:19px;margin:4px 0 6px}
+  .top{padding-top:10px}
+  nav{gap:18px}
+  .tools{gap:6px;padding-block:8px}
+  main{padding-top:14px}
+  .start{padding-top:6vh}
+  .q .a{padding-left:14px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body data-mode="ko">
+<div class="col">
+  <header>
+    <div class="pad">
+      <div class="top">
+        <div class="brand">
+          <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><path d="M1 11V8a8 6 0 0 1 16 0v3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M1 8h16M5 4.6V8M9 3.4V8M13 4.6V8" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+          <span>Lecture Bridge · 영어 → 한국어</span>
+        </div>
+        <span class="pill" id="pill"><i></i><span id="pillText">Ready</span></span>
+      </div>
+      <h1 id="title">오늘의 강의</h1>
+      <nav aria-label="Sections">
+        <a href="#live" data-tab="live">실시간 자막</a>
+        <a href="#words" data-tab="words">용어</a>
+        <a href="#recap" data-tab="recap">요약</a>
+        <a href="#study" data-tab="study">복습</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="tools pad">
+    <div class="seg" role="group" aria-label="Language">
+      <button data-mode="ko" aria-pressed="true">한국어</button>
+      <button data-mode="both" aria-pressed="false">함께 보기</button>
+      <button data-mode="en" aria-pressed="false">English</button>
+    </div>
+    <button class="chip" id="sizeBtn" aria-label="Text size">Aa <small id="sizeLbl">M</small></button>
+    <span class="wake" id="wake" hidden>화면 켜짐 유지 중</span>
+  </div>
+
+  <main class="pad">
+    <div class="note" id="note" hidden></div>
+
+    <section class="view" id="v-live">
+      <div class="start" id="startCard">
+        <h3>수업 시작을 누르면 강의를 듣기 시작합니다</h3>
+        <p>교수님의 영어 강의를 이 기기의 마이크로 듣고, 한국어 자막으로 바로 보여 드립니다.</p>
+        <p class="en">Press Start class and this device's microphone will caption the lecture in Korean.</p>
+        <input id="titleIn" placeholder="강의 이름 (선택) · e.g. PSY 1010" aria-label="Lecture name" autocomplete="off">
+        <ol class="steps">
+          <li><b>1</b><span>휴대폰이나 노트북을 교수님 소리가 잘 들리는 곳에 두세요.</span></li>
+          <li><b>2</b><span>아래 <b style="color:inherit">수업 시작</b>을 누르고 마이크 사용을 <b style="color:inherit">허용</b>하세요.</span></li>
+          <li><b>3</b><span>수업 중에는 이 화면을 열어 두세요. 화면이 꺼지면 듣기가 멈춥니다.</span></li>
+        </ol>
+      </div>
+      <div id="caps" aria-live="polite"></div>
+      <div class="interim" id="interim"></div>
+    </section>
+
+    <section class="view" id="v-words" hidden>
+      <p class="eyebrow">Key terms · 핵심 용어</p>
+      <h2>오늘 강의에 나온 용어</h2>
+      <p class="lede">강의 중에 나온 중요한 영어 용어와 쉬운 한국어 설명입니다. 수업이 진행되면서 자동으로 추가됩니다.</p>
+      <input class="search" id="q" type="search" placeholder="용어 검색 (English 또는 한국어)" aria-label="Search terms">
+      <div id="termsWrap"></div>
+    </section>
+
+    <section class="view" id="v-recap" hidden>
+      <p class="eyebrow">Recap · 요약</p>
+      <h2>지금까지의 강의 요약</h2>
+      <p class="lede">강의 내용을 짧게 정리한 요약입니다. 수업 중에 몇 분마다 자동으로 업데이트됩니다.</p>
+      <div class="block" id="sumBlock"></div>
+      <div class="btnrow block">
+        <button class="btn" id="sumBtn">지금 요약하기</button>
+        <button class="btn" id="copyBtn">전체 자막 복사</button>
+        <span class="meta" id="recapMsg"></span>
+      </div>
+      <div class="btnrow block">
+        <button class="btn danger" id="clearBtn">새 수업 시작 (자막 지우기)</button>
+      </div>
+    </section>
+
+    <section class="view" id="v-study" hidden>
+      <p class="eyebrow">Study · 복습</p>
+      <h2>복습 가이드</h2>
+      <p class="lede">수업이 끝나면 버튼을 눌러 핵심 정리와 복습 질문을 만드세요. 질문을 누르면 정답을 볼 수 있습니다.</p>
+      <div class="btnrow block"><button class="btn primary" id="studyBtn">복습 가이드 만들기</button><span class="meta" id="studyMsg"></span></div>
+      <div id="studyWrap"></div>
+    </section>
+  </main>
+</div>
+
+<button class="jump" id="jump" hidden>새 자막 ↓</button>
+
+<div class="bar" id="bar">
+  <div class="in pad">
+    <button class="mic" id="micBtn" aria-live="polite">
+      <span class="level" aria-hidden="true"><i></i><i></i><i></i></span><span id="micLbl">수업 시작</span>
+    </button>
+    <div class="status" id="status"><b>준비됨</b>수업 시작을 누르면 듣기 시작합니다.</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const ls = {
+    get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
+    set(k, v){ try { localStorage.setItem(k, v); } catch {} },
+    del(k){ try { localStorage.removeItem(k); } catch {} }
+  };
+
+  /* ---------- preferences ---------- */
+  let mode = ls.get("lb-mode", "ko");
+  const sizes = {S:"17px", M:"20px", L:"24px", XL:"28px"};
+  let size = ls.get("lb-size", "M");
+  function applyPrefs(){
+    document.body.dataset.mode = mode;
+    document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+    document.documentElement.style.setProperty("--cap", sizes[size] || sizes.M);
+    $("sizeLbl").textContent = size;
+  }
+  document.querySelectorAll(".seg button").forEach(b => b.onclick = () => { mode = b.dataset.mode; ls.set("lb-mode", mode); applyPrefs(); });
+  $("sizeBtn").onclick = () => { const k = Object.keys(sizes); size = k[(k.indexOf(size) + 1) % k.length]; ls.set("lb-size", size); applyPrefs(); };
+  applyPrefs();
+
+  /* ---------- tabs ---------- */
+  const tabs = ["live","words","recap","study"];
+  function route(){
+    const t = tabs.includes(location.hash.slice(1)) ? location.hash.slice(1) : "live";
+    tabs.forEach(n => $("v-" + n).hidden = n !== t);
+    document.querySelectorAll("nav a").forEach(a => a.dataset.tab === t ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+    document.body.dataset.tab = t;
+    if (t !== "live") $("jump").hidden = true;
+  }
+  addEventListener("hashchange", route); route();
+
+  /* ---------- saved session (this device only) ---------- */
+  let S = { title: "", lines: [], summary: null, terms: [], study: null };
+  try { const raw = ls.get("lb-session", ""); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch {}
+  S.lines = (S.lines || []).map(l => (l.ko || l.err) ? l : Object.assign(l, {retry: true}));
+  let saveT = null;
+  function save(){ clearTimeout(saveT); saveT = setTimeout(() => ls.set("lb-session", JSON.stringify(S)), 400); }
+
+  function note(html){ const n = $("note"); n.hidden = !html; n.innerHTML = html || ""; }
+
+  /* ---------- server calls ---------- */
+  let classCode = ls.get("lb-code", "");
+  async function api(path, body){
+    const r = await fetch(path, {method: "POST", headers: {"content-type": "application/json", "x-class-code": classCode}, body: JSON.stringify(body)});
+    if (r.status === 401) { askCode(); throw {code: "code"}; }
+    if (r.status === 429) throw {code: "busy"};
+    if (!r.ok) throw {code: "server", status: r.status};
+    return r.json();
+  }
+  function askCode(){
+    if ($("codeIn")) return;
+    note(`수업 코드가 필요합니다. 교수님이나 친구에게 받은 코드를 입력하세요. · Enter the class code.
+      <div class="code"><input id="codeIn" autocomplete="off" autocapitalize="off" placeholder="Class code" aria-label="Class code"><button class="btn primary" id="codeOk">확인</button></div>`);
+    $("codeOk").onclick = () => { classCode = $("codeIn").value.trim(); ls.set("lb-code", classCode); note(""); retryFailed(); };
+  }
+
+  /* ---------- captions ---------- */
+  const capEls = new Map();
+  function nearBottom(){ return innerHeight + scrollY >= document.documentElement.scrollHeight - 160; }
+  function scrollDown(){ scrollTo({top: document.documentElement.scrollHeight, behavior: "smooth"}); }
+  function renderCaps(){
+    const stick = nearBottom();
+    const box = $("caps");
+    const ids = new Set(S.lines.map(l => l.id));
+    for (const [id, el] of capEls) if (!ids.has(id)) { el.remove(); capEls.delete(id); }
+    let added = false;
+    S.lines.forEach((l, i) => {
+      let el = capEls.get(l.id);
+      if (!el) { el = document.createElement("div"); el.className = "cap"; capEls.set(l.id, el); box.appendChild(el); added = true; }
+      const html = (l.ko ? `<div class="ko">${esc(l.ko)}</div>` : `<div class="wait">${l.err ? "번역하지 못했습니다" : "번역 중…"}</div>`) + `<div class="en">${esc(l.en)}</div>`;
+      if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+      el.classList.toggle("latest", i === S.lines.length - 1);
+    });
+    $("startCard").hidden = S.lines.length > 0 || listening;
+    if (added && document.body.dataset.tab === "live") { if (stick) { scrollDown(); $("jump").hidden = true; } else $("jump").hidden = false; }
+  }
+  $("jump").onclick = () => { scrollDown(); $("jump").hidden = true; };
+  addEventListener("scroll", () => { if (nearBottom()) $("jump").hidden = true; }, {passive: true});
+
+  /* ---------- translation queue ---------- */
+  const queue = []; let working = false, sinceSummary = 0, fails = 0;
+  function addLine(en){
+    const line = {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), en, ko: ""};
+    S.lines.push(line); save(); renderCaps();
+    queue.push(line); pump();
+  }
+  async function pump(){
+    if (working) return; working = true;
+    while (queue.length) {
+      const line = queue.shift();
+      const idx = S.lines.indexOf(line);
+      const context = S.lines.slice(Math.max(0, idx - 3), idx).map(l => l.en).join(" ");
+      try {
+        const r = await api("/api/translate", {text: line.en, context});
+        line.ko = String(r.ko || "").trim(); line.err = false; delete line.retry; fails = 0;
+        if (line.ko) { sinceSummary++; if (sinceSummary >= 8) summarize(false); }
+      } catch (e) {
+        line.err = true; line.retry = true;
+        if (e.code === "busy") note("번역 요청이 너무 많습니다. 잠시 후 계속됩니다. · Translation is busy, retrying shortly.");
+        else if (e.code !== "code" && ++fails >= 3) note("번역 서버에 연결할 수 없습니다. 인터넷 연결을 확인하세요. 영어 자막은 계속 나옵니다.");
+      }
+      save(); renderCaps(); setStatus();
+    }
+    working = false;
+  }
+  function retryFailed(){ S.lines.filter(l => l.retry && !queue.includes(l)).forEach(l => { l.err = false; queue.push(l); }); renderCaps(); pump(); }
+  setInterval(() => { if (navigator.onLine && S.lines.some(l => l.retry) && !working) retryFailed(); }, 20000);
+
+  /* ---------- speech recognition ---------- */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, listening = false, want = false, restarts = 0;
+  let buf = "", bufT = null, lastFinal = "", lastFinalAt = 0;
+
+  function flush(){
+    clearTimeout(bufT); bufT = null;
+    const t = buf.trim(); buf = "";
+    if (t) addLine(t.charAt(0).toUpperCase() + t.slice(1));
+  }
+  function onFinal(text){
+    let t = text.replace(/\s+/g, " ").trim();
+    if (!t) return;
+    const now = Date.now();
+    // iPhone Safari sometimes re-sends the same result; drop exact or growing repeats.
+    if (now - lastFinalAt < 4000 && (t === lastFinal || lastFinal.endsWith(t))) return;
+    if (now - lastFinalAt < 4000 && lastFinal && t.startsWith(lastFinal)) t = t.slice(lastFinal.length).trim();
+    lastFinal = text.replace(/\s+/g, " ").trim(); lastFinalAt = now;
+    if (!t) return;
+    buf += " " + t;
+    const words = buf.trim().split(" ").length;
+    if (/[.!?]$/.test(buf.trim()) || words >= 8) flush();
+    else { clearTimeout(bufT); bufT = setTimeout(flush, 1500); }
+  }
+
+  function makeRec(){
+    const r = new SR();
+    r.lang = "en-US"; r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
+    r.onstart = () => { listening = true; restarts = 0; setStatus(); renderCaps(); };
+    r.onresult = e => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const res = e.results[i];
+        if (res.isFinal) onFinal(res[0].transcript); else interim += res[0].transcript;
+      }
+      $("interim").textContent = interim.trim();
+      if (interim && nearBottom()) scrollDown();
+    };
+    r.onerror = e => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        want = false;
+        note(isIOS()
+          ? "마이크를 사용할 수 없습니다. iPhone <b>설정 → Safari → 마이크</b>에서 허용하고, <b>설정 → 일반 → 키보드 → 받아쓰기</b>가 켜져 있는지 확인한 뒤 다시 수업 시작을 누르세요."
+          : "마이크를 사용할 수 없습니다. 주소창 옆의 자물쇠/설정 아이콘에서 마이크를 <b>허용</b>한 뒤 다시 수업 시작을 누르세요. Mac은 <b>시스템 설정 → 개인정보 보호 및 보안 → 마이크</b>에서 브라우저를 허용해야 합니다.");
+      } else if (e.error === "audio-capture") {
+        want = false; note("마이크를 찾을 수 없습니다. 다른 앱이 마이크를 쓰고 있는지 확인하세요.");
+      } else if (e.error === "network") {
+        note("음성 인식에 인터넷 연결이 필요합니다. 연결되면 자동으로 다시 시작합니다.");
+      }
+    };
+    r.onend = () => {
+      listening = false; $("interim").textContent = ""; flush();
+      if (want && document.visibilityState === "visible") {
+        restarts++;
+        setTimeout(() => { if (want) startRec(); }, Math.min(300 * restarts, 3000));
+      }
+      setStatus(); renderCaps();
+    };
+    return r;
+  }
+  function startRec(){ try { rec = makeRec(); rec.start(); } catch { setTimeout(() => { if (want) startRec(); }, 1000); } }
+  const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  function startClass(){
+    if (!SR) {
+      note(isIOS()
+        ? "이 브라우저에서는 음성 인식을 쓸 수 없습니다. iPhone에서는 <b>Safari</b>로 이 페이지를 열어 주세요."
+        : "이 브라우저에서는 음성 인식을 쓸 수 없습니다. Mac에서는 <b>Chrome</b> 또는 <b>Safari</b>로 이 페이지를 열어 주세요.");
+      return;
+    }
+    if (!S.lines.length) { S.title = $("titleIn").value.trim(); $("title").textContent = S.title || "오늘의 강의"; save(); }
+    note(""); want = true; startRec(); keepAwake(); setStatus();
+  }
+  function stopClass(){ want = false; try { rec && rec.stop(); } catch {} flush(); setStatus(); summarize(false); }
+  $("micBtn").onclick = () => want ? stopClass() : startClass();
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") { keepAwake(); if (want && !listening) startRec(); }
+  });
+
+  function setStatus(){
+    const pend = queue.length + (working ? 1 : 0);
+    const on = want;
+    $("micBtn").classList.toggle("on", on);
+    $("micLbl").textContent = on ? "멈추기" : (S.lines.length ? "다시 듣기" : "수업 시작");
+    $("pill").classList.toggle("live", on && listening);
+    $("pillText").textContent = on ? (listening ? "Live" : "Connecting") : (S.lines.length ? "Paused" : "Ready");
+    $("status").innerHTML = on
+      ? (listening ? `<b>듣고 있습니다</b>${S.lines.length}줄 · ${pend ? pend + "줄 번역 중" : "모두 번역됨"}` : `<b>마이크 연결 중…</b>잠시만 기다려 주세요.`)
+      : (S.lines.length ? `<b>멈춤</b>${S.lines.length}줄 저장됨 · 다시 듣기를 누르면 이어서 듣습니다.` : `<b>준비됨</b>수업 시작을 누르면 듣기 시작합니다.`);
+  }
+
+  /* ---------- summary + terms ---------- */
+  let summarizing = false;
+  const transcript = max => { const t = S.lines.map(l => l.en).join(" "); return t.length > max ? "…" + t.slice(-max) : t; };
+  async function summarize(manual){
+    if (summarizing) return;
+    if (S.lines.length < 3) { if (manual) $("recapMsg").textContent = "강의가 조금 더 진행된 뒤에 요약할 수 있습니다."; return; }
+    summarizing = true; sinceSummary = 0;
+    $("sumBtn").disabled = true; $("recapMsg").textContent = manual ? "요약 중…" : "";
+    try {
+      const r = await api("/api/summary", {transcript: transcript(60000), prevTerms: (S.terms || []).map(t => t.term)});
+      if (Array.isArray(r.ko) && r.ko.length) S.summary = {ko: r.ko, en: r.en || [], at: Date.now()};
+      if (Array.isArray(r.terms) && r.terms.length) S.terms = r.terms;
+      save(); renderTerms(); renderRecap(); $("recapMsg").textContent = "";
+    } catch (e) {
+      if (manual) $("recapMsg").textContent = e.code === "busy" ? "잠시 후 다시 시도하세요." : "요약하지 못했습니다. 다시 시도하세요.";
+    } finally { summarizing = false; $("sumBtn").disabled = false; }
+  }
+  $("sumBtn").onclick = () => summarize(true);
+
+  function renderTerms(){
+    const terms = Array.isArray(S.terms) ? S.terms : [];
+    const q = $("q").value.trim().toLowerCase();
+    const list = terms.filter(t => !q || [t.term, t.ko, t.def_ko].join(" ").toLowerCase().includes(q));
+    if (!terms.length) { $("termsWrap").innerHTML = `<p class="muted">아직 용어가 없습니다. 강의가 몇 분 진행되면 중요한 용어가 여기에 추가됩니다.</p>`; return; }
+    if (!list.length) { $("termsWrap").innerHTML = `<p class="muted">"${esc(q)}"에 해당하는 용어가 없습니다.</p>`; return; }
+    $("termsWrap").innerHTML = `<p class="group">This lecture · ${list.length}</p><div class="terms">` + list.map(t =>
+      `<div class="term"><div class="row"><b>${esc(t.term)}</b><span class="k">${esc(t.ko)}</span></div>${t.def_ko ? `<p>${esc(t.def_ko)}</p>` : ""}</div>`).join("") + `</div>`;
+  }
+  $("q").addEventListener("input", renderTerms);
+
+  function ago(ts){ const m = Math.round((Date.now() - ts) / 60000); return m < 1 ? "방금 업데이트" : m < 60 ? `${m}분 전 업데이트` : `${Math.round(m / 60)}시간 전 업데이트`; }
+  function renderRecap(){
+    const s = S.summary;
+    if (!s || !s.ko || !s.ko.length) { $("sumBlock").innerHTML = `<p class="muted">아직 요약이 없습니다. 강의가 몇 분 진행되면 자동으로 요약이 나타납니다.</p>`; return; }
+    $("sumBlock").innerHTML = `<p class="group">Summary · ${esc(ago(s.at))}</p><ul class="bul">` +
+      s.ko.map((k, i) => `<li><span class="ko-t">${esc(k)}</span>${s.en[i] ? `<span class="en">${esc(s.en[i])}</span>` : ""}</li>`).join("") + `</ul>`;
+  }
+  setInterval(() => { if (S.summary && document.body.dataset.tab === "recap") renderRecap(); }, 60000);
+
+  /* ---------- study guide ---------- */
+  function renderStudy(){
+    const s = S.study;
+    if (!s || !Array.isArray(s.questions) || !s.questions.length) { $("studyWrap").innerHTML = `<p class="muted">아직 복습 가이드가 없습니다.</p>`; return; }
+    const tk = s.takeaways || [];
+    $("studyWrap").innerHTML =
+      (tk.length ? `<div class="block"><p class="group">Key takeaways · 핵심 정리</p><ul class="bul">${tk.map(t => `<li><span class="ko-t">${esc(t.ko)}</span>${t.en ? `<span class="en">${esc(t.en)}</span>` : ""}</li>`).join("")}</ul></div>` : "") +
+      `<p class="group">Review questions · 복습 질문</p>` +
+      s.questions.map((q, i) => `<details class="q"><summary><span class="n">Q${i + 1}</span><span>${esc(q.q)}</span></summary><div class="a">${esc(q.a)}</div></details>`).join("");
+  }
+  $("studyBtn").onclick = async () => {
+    if (S.lines.length < 5) { $("studyMsg").textContent = "강의 내용이 더 필요합니다."; return; }
+    $("studyBtn").disabled = true; $("studyMsg").textContent = "만드는 중… 최대 1분 정도 걸립니다.";
+    try {
+      const r = await api("/api/study", {transcript: transcript(80000)});
+      if (!r.questions || !r.questions.length) throw {code: "empty"};
+      S.study = r; save(); renderStudy(); $("studyMsg").textContent = "";
+    } catch (e) {
+      $("studyMsg").textContent = e.code === "busy" ? "잠시 후 다시 시도하세요." : "만들지 못했습니다. 다시 시도하세요.";
+    } finally { $("studyBtn").disabled = false; }
+  };
+
+  /* ---------- copy + clear ---------- */
+  $("copyBtn").onclick = async () => {
+    const text = (S.title ? S.title + "\n\n" : "") + S.lines.map(l => (l.ko ? l.ko + "\n" : "") + l.en).join("\n\n");
+    if (!S.lines.length) { $("recapMsg").textContent = "복사할 자막이 없습니다."; return; }
+    try { await navigator.clipboard.writeText(text); $("recapMsg").textContent = "복사했습니다."; }
+    catch { $("recapMsg").textContent = "복사할 수 없습니다."; }
+  };
+  let clearArmed = false, clearT = null;
+  $("clearBtn").onclick = () => {
+    if (!clearArmed) { clearArmed = true; $("clearBtn").textContent = "한 번 더 누르면 모두 지워집니다"; clearT = setTimeout(() => { clearArmed = false; $("clearBtn").textContent = "새 수업 시작 (자막 지우기)"; }, 4000); return; }
+    clearTimeout(clearT); clearArmed = false; $("clearBtn").textContent = "새 수업 시작 (자막 지우기)";
+    if (want) stopClass();
+    queue.length = 0;
+    S = {title: "", lines: [], summary: null, terms: [], study: null}; ls.del("lb-session");
+    $("titleIn").value = ""; $("title").textContent = "오늘의 강의";
+    renderAll(); location.hash = "#live";
+  };
+
+  /* ---------- keep the screen on ---------- */
+  let wakeLock = null;
+  async function keepAwake(){
+    if (wakeLock || document.visibilityState !== "visible" || !navigator.wakeLock) return;
+    try {
+      wakeLock = await navigator.wakeLock.request("screen");
+      $("wake").hidden = false;
+      wakeLock.addEventListener("release", () => { wakeLock = null; $("wake").hidden = true; });
+    } catch { wakeLock = null; }
+  }
+
+  /* ---------- bar height ---------- */
+  const bar = $("bar");
+  const placeBar = () => document.documentElement.style.setProperty("--barH", bar.offsetHeight + "px");
+  addEventListener("resize", placeBar);
+  if (window.ResizeObserver) new ResizeObserver(placeBar).observe(bar);
+  placeBar();
+
+  function renderAll(){
+    $("title").textContent = S.title || "오늘의 강의";
+    renderCaps(); renderTerms(); renderRecap(); renderStudy(); setStatus();
+  }
+  renderAll();
+  if (S.lines.some(l => l.retry)) retryFailed();
+  if (!SR) $("status").innerHTML = `<b>음성 인식 미지원</b>${isIOS() ? "iPhone은 Safari로 열어 주세요." : "Chrome 또는 Safari로 열어 주세요."}`;
+})();
+</script>
+</body>
+</html>

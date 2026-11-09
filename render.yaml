@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: lecture-bridge
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CLASS_CODE
+        sync: false
