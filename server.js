@@ -10,6 +10,7 @@ const API_KEY = process.env.ANTHROPIC_API_KEY || "";
 const CLASS_CODE = (process.env.CLASS_CODE || "").trim();          // optional: stops strangers from using your key
 const TRANSLATE_MODEL = process.env.TRANSLATE_MODEL || "claude-haiku-5-5";
 const SUMMARY_MODEL = process.env.SUMMARY_MODEL || "claude-sonnet-5-5";
+const API_BASE = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const INDEX = path.join(here, "public", "index.html");
@@ -18,7 +19,7 @@ if (!API_KEY) console.warn("ANTHROPIC_API_KEY is not set. Translation will not w
 
 /* ---------- Claude API ---------- */
 async function askClaude(model, prompt, maxTokens) {
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
+  const r = await fetch(API_BASE + "/v1/messages", {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": API_KEY, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: "user", content: prompt }] }),
@@ -26,6 +27,38 @@ async function askClaude(model, prompt, maxTokens) {
   if (!r.ok) throw new Error(`Claude API ${r.status}: ${(await r.text()).slice(0, 300)}`);
   const j = await r.json();
   return (j.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+}
+// Streams Claude's answer to the browser piece by piece, so Korean appears while it is being written.
+async function streamClaude(model, prompt, maxTokens, res) {
+  const r = await fetch(API_BASE + "/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": API_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model, max_tokens: maxTokens, stream: true, messages: [{ role: "user", content: prompt }] }),
+  });
+  if (!r.ok) throw new Error(`Claude API ${r.status}: ${(await r.text()).slice(0, 300)}`);
+  res.writeHead(200, {
+    "content-type": "text/plain; charset=utf-8",
+    "cache-control": "no-store, no-transform",
+    "x-accel-buffering": "no",
+    "x-content-type-options": "nosniff",
+  });
+  const reader = r.body.getReader(), dec = new TextDecoder();
+  let buf = "";
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+        if (!line.startsWith("data:")) continue;
+        let ev; try { ev = JSON.parse(line.slice(5)); } catch { continue; }
+        if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") res.write(ev.delta.text);
+        else if (ev.type === "error") throw new Error("stream error: " + (ev.error?.message || "unknown"));
+      }
+    }
+  } finally { res.end(); }
 }
 function parseJSON(text) {
   const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -36,20 +69,10 @@ function parseJSON(text) {
 const str = (v, n) => String(v ?? "").slice(0, n);
 
 /* ---------- prompts ---------- */
-const translatePrompt = (text, context) => `You are the live interpreter for a university lecture. The professor speaks English; Korean-speaking students read your Korean captions in real time on their phones.
-
-Earlier lines, for context only (do not translate these):
-"""${context}"""
-
-Translate ONLY this new line into natural, easy-to-read Korean:
-"""${text}"""
-
-Rules:
-- Use clear spoken-lecture Korean (합니다/해요 style), not stiff word-for-word translation.
-- For an academic or technical term, write the Korean term followed by the English in parentheses, e.g. 기억 응고화(memory consolidation).
-- Keep names, numbers, formulas and course codes as they are.
-- The English came from speech recognition with no punctuation; quietly fix obvious mishearings.
-- Reply with the Korean translation only, with no notes or quotes.`;
+// Kept short on purpose: a shorter prompt gets a faster first word back.
+const translatePrompt = (text, context) => `Live Korean captions for an English university lecture. Translate only the NEW line into natural spoken-lecture Korean (합니다/해요). Put English in parentheses after technical terms, e.g. 기억 응고화(memory consolidation). Keep names and numbers. Quietly fix speech-recognition mistakes. Output only the Korean.
+Context (do not translate): ${context || "(start)"}
+NEW: ${text}`;
 
 const summaryPrompt = (transcript, prevTerms) => `Here is the running English transcript of a university lecture (from speech recognition, so it may contain small errors and no punctuation).
 
@@ -123,11 +146,10 @@ const server = http.createServer(async (req, res) => {
 
   try {
     if (url.pathname === "/api/translate") {
-      if (!allowed(ip, "t", 90)) return send(res, 429, { error: "slow down" });
+      if (!allowed(ip, "t", 150)) return send(res, 429, { error: "slow down" });
       const text = str(body.text, 1500).trim();
       if (!text) return send(res, 400, { error: "no text" });
-      const ko = await askClaude(TRANSLATE_MODEL, translatePrompt(text, str(body.context, 1200)), 600);
-      return send(res, 200, { ko });
+      return await streamClaude(TRANSLATE_MODEL, translatePrompt(text, str(body.context, 600)), 600, res);
     }
     if (url.pathname === "/api/summary") {
       if (!allowed(ip, "s", 6)) return send(res, 429, { error: "slow down" });
@@ -150,7 +172,9 @@ const server = http.createServer(async (req, res) => {
     return send(res, 404, { error: "not found" });
   } catch (e) {
     console.error(url.pathname, e.message);
-    return send(res, 502, { error: "translation service error" });
+    if (res.headersSent) { try { res.end(); } catch {} return; }
+    // Pass a short reason back so the page can show what's wrong (never includes the key).
+    return send(res, 502, { error: "translation service error", detail: String(e.message).slice(0, 240) });
   }
 });
 
