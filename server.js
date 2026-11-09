@@ -11,6 +11,9 @@ const CLASS_CODE = (process.env.CLASS_CODE || "").trim();          // optional: 
 const TRANSLATE_MODEL = process.env.TRANSLATE_MODEL || "claude-haiku-5-5";
 const SUMMARY_MODEL = process.env.SUMMARY_MODEL || "claude-sonnet-5-5";
 const API_BASE = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com";
+const DOC_MODEL = process.env.DOC_MODEL || "claude-sonnet-5-5";        // writes the detailed document summary
+const NOTES_MODEL = process.env.NOTES_MODEL || "claude-haiku-5-5";     // reads parts of very long documents first
+const DOC_MAX_CHARS = 1_500_000;
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const INDEX = path.join(here, "public", "index.html");
@@ -69,6 +72,110 @@ async function streamClaude(model, prompt, maxTokens, res) {
   if (!wrote) throw new Error("stream returned no text");
   res.end();
 }
+// Streams a reply, calling onText(lengthSoFar) as it grows; returns the full text and why it stopped.
+async function streamText(model, prompt, maxTokens, onText) {
+  const r = await fetch(API_BASE + "/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": API_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model, max_tokens: maxTokens, stream: true, messages: [{ role: "user", content: prompt }] }),
+  });
+  if (!r.ok) throw new Error(`Claude API ${r.status}: ${(await r.text()).slice(0, 300)}`);
+  const reader = r.body.getReader(), dec = new TextDecoder();
+  let buf = "", text = "", stop = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let nl;
+    while ((nl = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+      if (!line.startsWith("data:")) continue;
+      let ev; try { ev = JSON.parse(line.slice(5)); } catch { continue; }
+      if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") { text += ev.delta.text; onText?.(text.length); }
+      else if (ev.type === "message_delta" && ev.delta?.stop_reason) stop = ev.delta.stop_reason;
+      else if (ev.type === "error") throw new Error("stream error: " + (ev.error?.message || "unknown"));
+    }
+  }
+  if (!text.trim()) throw new Error("Claude returned no text");
+  return { text, stop };
+}
+
+/* ---------- long documents ---------- */
+// Rough token count: English is ~4 characters per token, Korean/Chinese/Japanese about 1 per character.
+function estTokens(s) {
+  let wide = 0;
+  for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) > 0x2e7f) wide++;
+  return Math.ceil((s.length - wide) / 4 + wide * 1.1);
+}
+// Split at paragraph breaks into parts of about `target` tokens.
+function splitText(text, target) {
+  const paras = text.split(/\n\s*\n/);
+  const parts = []; let cur = "", curT = 0;
+  const push = () => { if (cur.trim()) parts.push(cur.trim()); cur = ""; curT = 0; };
+  for (let p of paras) {
+    let t = estTokens(p);
+    while (t > target) {                       // one huge paragraph: cut it by size
+      const cutAt = Math.floor(p.length * (target / t));
+      push(); parts.push(p.slice(0, cutAt)); p = p.slice(cutAt); t = estTokens(p);
+    }
+    if (curT + t > target) push();
+    cur += (cur ? "\n\n" : "") + p; curT += t;
+  }
+  push();
+  return parts;
+}
+async function mapLimited(items, limit, fn) {
+  const out = new Array(items.length); let next = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) { const i = next++; out[i] = await fn(items[i], i); }
+  }));
+  return out;
+}
+const notesPrompt = (part, i, n, focus) => `This is part ${i + 1} of ${n} of a long document a college student must study. Write detailed English study notes for THIS PART ONLY (about 500-800 words): its main arguments in order, the evidence and examples used, important names, dates, numbers, definitions and any memorable quotes (short). Do not add outside information.${focus ? `\nThe student especially wants: ${focus}` : ""}
+
+PART ${i + 1}/${n}:
+"""
+${part}
+"""`;
+
+const docPrompt = (source, isNotes, focus, name) => `You are helping Korean-speaking college students in an American university understand an assigned text and prepare for class discussion.
+${isNotes ? "The document was very long, so below are detailed notes made from each part of it, in order." : "Below is the full document."}${name ? `\nFile name: ${name}` : ""}${focus ? `\nThe student's request (follow it): ${focus}` : ""}
+
+${isNotes ? "NOTES" : "DOCUMENT"}:
+"""
+${source}
+"""
+
+Reply with only this JSON (no other text):
+{"title_ko":"","title_en":"",
+ "overview":{"ko":"","en":""},
+ "sections":[{"heading_ko":"","heading_en":"","ko":"","en":""}],
+ "key_points":[{"ko":"","en":""}],
+ "terms":[{"term":"English term","ko":"한국어 용어","def_ko":"한 문장의 쉬운 한국어 설명"}],
+ "questions":[{"type":"이해|분석|적용|토론","ko":"","en":"","hint_ko":""}]}
+
+Rules:
+- overview: 4-6 sentences on what the text is about and its main claim.
+- sections: a DETAILED summary that follows the text's own structure and order, 4-10 sections. Each "ko" is 5-9 sentences keeping the important arguments, evidence, examples, names, numbers and dates; each "en" says the same in clear English.
+- key_points: the 5-8 most important takeaways.
+- terms: up to 12 key terms from the text.
+- questions: 8-10 open-ended discussion questions a student could ask or answer in class. Mix the types (이해 = understanding, 분석 = analysis, 적용 = connecting to real life or other ideas, 토론 = debatable, no single right answer). Make each one specific to ideas in this text, not generic. Give the English version as a student would actually say it in class. hint_ko is one short Korean pointer to where in the text to look.
+- Korean: natural academic 합니다체; put English in parentheses after technical terms, e.g. 기억 응고화(memory consolidation).
+- Use only what is in the text; do not invent facts.`;
+
+function cleanDoc(o) {
+  const arr = (v, n) => (Array.isArray(v) ? v : []).slice(0, n);
+  const pair = (p, n) => ({ ko: str(p?.ko, n), en: str(p?.en, n) });
+  return {
+    title_ko: str(o.title_ko, 200), title_en: str(o.title_en, 200),
+    overview: pair(o.overview, 2000),
+    sections: arr(o.sections, 14).filter(s => s && (s.ko || s.en)).map(s => ({ heading_ko: str(s.heading_ko, 200), heading_en: str(s.heading_en, 200), ...pair(s, 4000) })),
+    key_points: arr(o.key_points, 12).filter(k => k && (k.ko || k.en)).map(k => pair(k, 600)),
+    terms: arr(o.terms, 16).filter(t => t && t.term).map(t => ({ term: str(t.term, 100), ko: str(t.ko, 100), def_ko: str(t.def_ko, 400) })),
+    questions: arr(o.questions, 14).filter(q => q && (q.ko || q.en)).map(q => ({ type: str(q.type, 20), ...pair(q, 800), hint_ko: str(q.hint_ko, 300) })),
+  };
+}
+
 function parseJSON(text) {
   const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const body = fence ? fence[1] : text;
@@ -151,7 +258,55 @@ const server = http.createServer(async (req, res) => {
   if (!API_KEY) return send(res, 503, { error: "server has no API key" });
 
   let body;
-  try { body = await readBody(req); } catch { return send(res, 400, { error: "bad request" }); }
+  try { body = await readBody(req, url.pathname === "/api/document" ? 7_000_000 : 400_000); }
+  catch (e) { return send(res, e.message === "too large" ? 413 : 400, { error: "bad request", detail: e.message === "too large" ? "문서가 너무 큽니다" : "" }); }
+
+  if (url.pathname === "/api/document") {
+    if (!allowed(ip, "d", 4)) return send(res, 429, { error: "slow down" });
+    const text = str(body.text, DOC_MAX_CHARS).trim();
+    if (text.length < 200) return send(res, 400, { error: "too short", detail: "요약할 글이 너무 짧습니다" });
+    const focus = str(body.focus, 300).trim(), name = str(body.name, 120).trim();
+
+    // From here on the reply is a stream of JSON lines: progress steps, then the result (or an error).
+    res.writeHead(200, { "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store, no-transform", "x-accel-buffering": "no" });
+    const emit = o => { try { res.write(JSON.stringify(o) + "\n"); } catch {} };
+    const keepAlive = setInterval(() => emit({ stage: "wait" }), 15_000);
+    try {
+      let source = text, isNotes = false;
+      if (estTokens(text) > 60_000) {
+        const parts = splitText(text, 25_000);
+        let done = 0;
+        emit({ stage: "reading", done, total: parts.length });
+        const notes = await mapLimited(parts, 4, async (p, i) => {
+          const n = await askClaude(NOTES_MODEL, notesPrompt(p, i, parts.length, focus), 2500);
+          emit({ stage: "reading", done: ++done, total: parts.length });
+          return n;
+        });
+        source = notes.map((n, i) => `[Part ${i + 1}/${parts.length}]\n${n}`).join("\n\n");
+        isNotes = true;
+      }
+      const expect = 9000;
+      emit({ stage: "writing", chars: 0, expect });
+      let last = 0;
+      const prompt = docPrompt(source, isNotes, focus, name);
+      let out;
+      try {
+        out = await streamText(DOC_MODEL, prompt, 16000, n => { if (n - last >= 300) { last = n; emit({ stage: "writing", chars: n, expect }); } });
+      } catch (e) {
+        if (/Claude API (400|401|403|404)/.test(e.message)) throw e;
+        console.error("document stream failed, retrying without streaming:", e.message);
+        out = { text: await askClaude(DOC_MODEL, prompt, 16000), stop: "" };
+      }
+      let parsed;
+      try { parsed = parseJSON(out.text); }
+      catch { throw new Error(out.stop === "max_tokens" ? "결과가 너무 길어 잘렸습니다. 요청 사항에 '짧게'라고 적고 다시 시도하세요." : "결과를 읽을 수 없었습니다. 다시 시도하세요."); }
+      emit({ result: cleanDoc(parsed) });
+    } catch (e) {
+      console.error("/api/document", e.message);
+      emit({ error: String(e.message).slice(0, 240) });
+    } finally { clearInterval(keepAlive); res.end(); }
+    return;
+  }
 
   try {
     if (url.pathname === "/api/translate") {
