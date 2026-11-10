@@ -172,7 +172,45 @@ body[data-mode="en"] #v-doc .t-en{font-size:15.5px;color:var(--ink);margin-top:0
 .dq .ty{justify-self:start;font-size:10.5px;font-weight:600;letter-spacing:.06em;border-radius:999px;padding:1px 8px;background:var(--soft);color:var(--accent);font-family:var(--kr)}
 .dq .t-ko{font-weight:500}
 .dq .hint{font-family:var(--kr);font-size:12.5px;color:var(--faint);margin:4px 0 0}
-body[data-tab="doc"]:not(.listening) .bar{display:none}
+body[data-tab="doc"]:not(.listening) .bar,body[data-tab="ask"]:not(.listening) .bar{display:none}
+/* questions */
+.askdoc{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.askdoc svg{flex:none;color:var(--accent)}
+.askdoc .info{min-width:0;flex:1}
+.askdoc b{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.askdoc span{font-size:12.5px;color:var(--muted);font-family:var(--kr)}
+.askdoc.empty{flex-direction:column;align-items:stretch;text-align:center;border-style:dashed;padding:20px 16px}
+.askdoc.empty p{margin:0 0 10px;font-family:var(--kr);font-size:14px;color:var(--muted)}
+.askdoc.empty .btnrow{justify-content:center}
+.askdoc input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.askopts{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-bottom:18px}
+.askopts .lbl{font-size:12px;font-weight:600;color:var(--muted);font-family:var(--kr)}
+.btn.quiet{border-color:transparent;background:none;color:var(--muted);margin-left:auto;min-height:36px;padding-inline:8px}
+#chat{display:flex;flex-direction:column;gap:18px}
+.msg-q{align-self:flex-end;max-width:85%;background:var(--accent);color:var(--accent-ink);border-radius:14px 14px 4px 14px;padding:9px 13px;font-family:var(--kr);font-size:15px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg-a{background:var(--surface);border:1px solid var(--line);border-radius:4px 14px 14px 14px;padding:12px 14px;font-family:var(--kr);font-size:15.5px;line-height:1.7;overflow-wrap:anywhere}
+.msg-a p{margin:0 0 8px}.msg-a p:last-child{margin-bottom:0}
+.msg-a ul{margin:0 0 8px;padding-left:1.2em}.msg-a li{margin:2px 0}
+.msg-a .ev{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:13.5px;color:var(--muted)}
+.msg-a .ev b{color:var(--accent);font-weight:600;margin-right:4px}
+.msg-a .en-part{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-family:var(--sans);font-size:14.5px}
+.msg-a .thinking{color:var(--faint)}
+.msg-a .err{color:var(--live)}
+.msg-tools{display:flex;gap:4px;margin-top:8px;margin-left:-6px}
+.msg-tools button{border:0;background:none;color:var(--muted);font-size:12.5px;font-family:var(--kr);display:inline-flex;align-items:center;gap:4px;padding:5px 6px;border-radius:6px;cursor:pointer}
+.msg-tools button:hover{background:var(--soft);color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 12px}
+.chipq{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-size:13px;font-family:var(--kr);color:var(--ink);text-align:left;cursor:pointer}
+.chipq:hover{border-color:var(--accent);color:var(--accent)}
+.askbox{position:sticky;bottom:0;display:flex;gap:8px;align-items:flex-end;background:var(--bg);padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));margin-top:8px;border-top:1px solid var(--line)}
+.askbox textarea{flex:1;min-width:0;resize:none;max-height:30vh;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:10px 12px;font-size:16px;line-height:1.45;font-family:var(--kr)}
+.askbox textarea:focus{border-color:var(--accent)}
+.askbox textarea:focus-visible{outline:none}
+a.btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:inherit}
+a.btn.primary,label.btn.primary{color:var(--accent-ink)}
+label.btn{display:inline-flex;align-items:center;cursor:pointer;position:relative}
+.askbox .btn{min-height:44px}
+body[data-tab="ask"] main{padding-bottom:16px}
 .tts{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
 .tts .r1{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .tts .r2{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;align-items:center}
@@ -223,6 +261,7 @@ body[data-tab="doc"]:not(.listening) .bar{display:none}
         <a href="#recap" data-tab="recap">요약</a>
         <a href="#study" data-tab="study">복습</a>
         <a href="#doc" data-tab="doc">문서 요약</a>
+        <a href="#ask" data-tab="ask">질문</a>
       </nav>
     </div>
   </header>
@@ -314,6 +353,36 @@ body[data-tab="doc"]:not(.listening) .bar{display:none}
 
       <div id="docOut"></div>
     </section>
+
+    <section class="view" id="v-ask" hidden>
+      <p class="eyebrow">Ask · 질문하기</p>
+      <h2>문서에 대해 질문하기</h2>
+      <p class="lede">올린 글을 바탕으로 질문에 답해 드립니다. 답변 끝에는 글에서 찾은 근거 문장이 함께 나옵니다.</p>
+
+      <div class="askdoc" id="askDoc"></div>
+
+      <div class="askopts">
+        <span class="lbl">답변 언어</span>
+        <div class="seg" role="group" aria-label="Answer language" id="askLang">
+          <button data-al="ko" aria-pressed="true">한국어</button><button data-al="both" aria-pressed="false">둘 다</button><button data-al="en" aria-pressed="false">English</button>
+        </div>
+        <button class="btn quiet" id="askClear" hidden>대화 지우기</button>
+      </div>
+
+      <div id="chat" aria-live="polite"></div>
+
+      <div class="chips" id="askChips">
+        <button class="chipq">이 글의 핵심 주장은 무엇인가요?</button>
+        <button class="chipq">저자가 든 근거와 예시를 정리해 주세요.</button>
+        <button class="chipq">어려운 용어를 쉽게 설명해 주세요.</button>
+        <button class="chipq">시험에 나올 만한 내용은 무엇인가요?</button>
+      </div>
+
+      <form class="askbox" id="askForm">
+        <textarea id="askIn" rows="2" placeholder="질문을 입력하세요 (한국어 또는 English)" aria-label="Your question" enterkeyhint="send"></textarea>
+        <button class="btn primary" id="askBtn" type="submit">보내기</button>
+      </form>
+    </section>
   </main>
 </div>
 
@@ -354,7 +423,7 @@ body[data-tab="doc"]:not(.listening) .bar{display:none}
   applyPrefs();
 
   /* ---------- tabs ---------- */
-  const tabs = ["live","words","recap","study","doc"];
+  const tabs = ["live","words","recap","study","doc","ask"];
   function route(){
     const t = tabs.includes(location.hash.slice(1)) ? location.hash.slice(1) : "live";
     tabs.forEach(n => $("v-" + n).hidden = n !== t);
@@ -684,7 +753,17 @@ body[data-tab="doc"]:not(.listening) .bar{display:none}
     const words = (t.match(/\S+/g) || []).length;
     $("docCount").textContent = t ? `${t.length.toLocaleString()}자 · 약 ${words.toLocaleString()} 단어` + (t.length > DOC_MAX ? ` · 앞부분 ${DOC_MAX.toLocaleString()}자만 사용됩니다` : "") : "0자";
   }
-  $("docText").addEventListener("input", () => { if (!$("docText").value) setDropLabel(""); countDoc(); });
+  let docSaveT = null;
+  function saveDocText(){
+    clearTimeout(docSaveT);
+    docSaveT = setTimeout(() => {
+      const t = $("docText").value;
+      try { localStorage.setItem("lb-doc-text", t); localStorage.setItem("lb-doc-name", docName); }
+      catch { try { localStorage.removeItem("lb-doc-text"); } catch {} }   // too big to keep: it still works until the page is closed
+    }, 500);
+    renderAskDoc();
+  }
+  $("docText").addEventListener("input", () => { if (!$("docText").value) setDropLabel(""); countDoc(); saveDocText(); });
 
   function setDropLabel(name){
     docName = name;
@@ -713,7 +792,7 @@ body[data-tab="doc"]:not(.listening) .bar{display:none}
     if (file.size > 8 * 1024 * 1024) { $("docMsg").textContent = "파일이 너무 큽니다 (최대 약 8MB)."; return; }
     try {
       $("docText").value = await readFileText(file);
-      setDropLabel(file.name); countDoc(); $("docMsg").textContent = "";
+      setDropLabel(file.name); countDoc(); $("docMsg").textContent = ""; saveDocText(); askNewDoc();
     } catch { $("docMsg").textContent = "파일을 읽을 수 없습니다. 텍스트 파일인지 확인해 주세요."; }
   }
   $("docFile").addEventListener("change", e => { takeFile(e.target.files[0]); e.target.value = ""; });
@@ -783,7 +862,7 @@ body[data-tab="doc"]:not(.listening) .bar{display:none}
 
   $("docReset").onclick = () => {
     $("docText").value = ""; $("docFocus").value = ""; setDropLabel(""); countDoc();
-    $("docMsg").textContent = ""; docResult = null; ls.del("lb-doc"); renderDoc();
+    $("docMsg").textContent = ""; docResult = null; ls.del("lb-doc"); ls.del("lb-doc-text"); ls.del("lb-doc-name"); renderDoc(); renderAskDoc();
   };
 
 
@@ -972,6 +1051,153 @@ body[data-tab="doc"]:not(.listening) .bar{display:none}
     $("docCopyQ").onclick = () => copy(qs.map((q, i) => `${i + 1}. ${pair(q).replace(/\n/g, "\n   ")}`).join("\n"));
   }
   renderDoc();
+
+  /* ---------- questions about the document ---------- */
+  { const t = ls.get("lb-doc-text", ""); if (t && !$("docText").value) { $("docText").value = t; setDropLabel(ls.get("lb-doc-name", "")); countDoc(); } }
+  let chat = [];
+  try { chat = JSON.parse(ls.get("lb-qa", "[]")) || []; } catch { chat = []; }
+  let askLang = ls.get("lb-ask-lang", "ko"), asking = false, askCtl = null;
+  const saveChat = () => ls.set("lb-qa", JSON.stringify(chat.filter(m => !m.failed).slice(-40)));
+  const DOC_ICON = `<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14 3v5h5M9 13h6M9 17h4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`;
+
+  function renderAskDoc(){
+    const t = $("docText").value.trim(), box = $("askDoc");
+    if (t.length < 50) {
+      box.className = "askdoc empty";
+      box.innerHTML = `<p>질문할 글이 없습니다. 파일을 올리거나, 문서 요약 탭에서 글을 붙여넣어 주세요.</p>
+        <div class="btnrow"><label class="btn primary" for="askFile">파일 올리기<input type="file" id="askFile" accept=".txt,.md,.markdown,.text,.srt,.vtt,.csv,.rtf,text/plain"></label><a class="btn" href="#doc">붙여넣기</a></div>`;
+      $("askFile").onchange = e => { takeFile(e.target.files[0]); e.target.value = ""; };
+    } else {
+      const words = (t.match(/\S+/g) || []).length;
+      box.className = "askdoc";
+      box.innerHTML = `${DOC_ICON}<div class="info"><b>${esc(docName || "붙여넣은 글")}</b><span>${t.length.toLocaleString()}자 · 약 ${words.toLocaleString()} 단어${t.length > 200000 ? " · 긴 글이라 질문과 관련된 부분을 찾아 답합니다" : ""}</span></div><a class="btn" href="#doc">바꾸기</a>`;
+    }
+    $("askBtn").disabled = t.length < 50 || asking;
+  }
+  function askNewDoc(){
+    // A different document: old answers no longer apply.
+    if (chat.length) { chat = []; saveChat(); renderChat(); }
+  }
+
+  // Small, safe formatting: paragraphs, "- " lists, **bold**, and the 근거/Evidence and English parts.
+  function fmt(text){
+    const inline = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+    let html = "", list = false, zone = "";
+    const close = () => { if (list) { html += "</ul>"; list = false; } };
+    for (const raw of String(text).split("\n")) {
+      const line = raw.trim();
+      if (!line) { close(); continue; }
+      if (/^English:\s*$/i.test(line)) { close(); html += `<div class="en-part">`; zone = "en"; continue; }
+      const ev = line.match(/^(근거|Evidence)\s*[:：]\s*(.*)$/i);
+      if (ev) { close(); html += `<div class="ev"><b>${esc(ev[1])}</b>${inline(ev[2])}</div>`; continue; }
+      if (/^[-•*]\s+/.test(line)) { if (!list) { html += "<ul>"; list = true; } html += `<li>${inline(line.replace(/^[-•*]\s+/, ""))}</li>`; continue; }
+      close(); html += `<p>${inline(line)}</p>`;
+    }
+    close(); if (zone === "en") html += "</div>";
+    return html;
+  }
+  const SPEAK_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+  function renderChat(){
+    const box = $("chat");
+    box.innerHTML = chat.map((m, i) => m.role === "user"
+      ? `<div class="msg-q">${esc(m.content)}</div>`
+      : `<div><div class="msg-a" id="ans-${i}">${m.content ? fmt(m.content) : m.err ? `<p class="err">${m.err}</p>` : `<p class="thinking">답변을 찾는 중…</p>`}</div>${m.content && m.done ? `<div class="msg-tools"><button data-copy="${i}">복사</button>${synth ? `<button data-say="${i}">${SPEAK_ICON}듣기</button>` : ""}</div>` : ""}</div>`
+    ).join("");
+    box.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
+      try { await navigator.clipboard.writeText(chat[+b.dataset.copy].content); b.textContent = "복사됨"; } catch { b.textContent = "복사 실패"; }
+    });
+    box.querySelectorAll("[data-say]").forEach(b => b.onclick = () => sayAnswer(chat[+b.dataset.say].content, b));
+    $("askClear").hidden = !chat.length;
+    $("askChips").hidden = chat.length > 0;
+  }
+
+  // Read one answer aloud with the same female-voice choice as the summary player.
+  let sayGen = 0;
+  function sayAnswer(text, btn){
+    if (!synth) return;
+    ttsPause();
+    const g = ++sayGen; synth.cancel();
+    if (btn.dataset.on) { delete btn.dataset.on; btn.innerHTML = SPEAK_ICON + "듣기"; return; }
+    document.querySelectorAll("[data-say]").forEach(x => { delete x.dataset.on; x.innerHTML = SPEAK_ICON + "듣기"; });
+    btn.dataset.on = "1"; btn.innerHTML = SPEAK_ICON + "정지";
+    const parts = String(text).split(/\n\s*English:\s*\n/i);
+    const queue = [];
+    parts.forEach((part, pi) => {
+      const lang = pi === 1 || !/[가-힣]/.test(part) ? "en" : "ko";
+      const clean = part.replace(/\*\*/g, "").replace(/^\s*[-•*]\s+/gm, "").replace(/^(근거|Evidence)\s*[:：].*$/gim, "");
+      sentences(prep(clean, lang)).forEach(t => queue.push({t, lang}));
+    });
+    let i = 0;
+    const next = () => {
+      if (g !== sayGen) return;
+      if (i >= queue.length) { delete btn.dataset.on; btn.innerHTML = SPEAK_ICON + "듣기"; return; }
+      const it = queue[i++], u = new SpeechSynthesisUtterance(it.t), v = pickVoice(it.lang);
+      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = it.lang === "ko" ? "ko-KR" : "en-US";
+      u.rate = ttsRate;
+      u.onend = next; u.onerror = e => { if (e.error !== "interrupted" && e.error !== "canceled") next(); };
+      synth.speak(u);
+    };
+    next();
+  }
+
+  async function ask(question){
+    question = question.trim();
+    const text = $("docText").value.trim();
+    if (!question || asking) return;
+    if (text.length < 50) { renderAskDoc(); return; }
+    chat = chat.filter((m, i) => !(m.failed || (chat[i + 1] && chat[i + 1].failed)));
+    asking = true; $("askBtn").disabled = true; $("askIn").value = "";
+    const history = chat.filter(m => m.content).slice(-8).map(m => ({role: m.role, content: m.content.slice(0, 3000)}));
+    chat.push({role: "user", content: question});
+    const a = {role: "assistant", content: "", done: false}; chat.push(a);
+    renderChat(); scrollTo({top: document.documentElement.scrollHeight, behavior: "smooth"});
+    const el = () => $("ans-" + chat.indexOf(a));
+    try {
+      const r = await fetch("/api/ask", {method: "POST", headers: {"content-type": "application/json", "x-class-code": classCode},
+        body: JSON.stringify({text, question, history, lang: askLang, name: docName})});
+      if (r.status === 401) { askCode(); throw {code: "code"}; }
+      if (r.status === 429) throw {code: "busy"};
+      if (!r.ok) { let j = {}; try { j = await r.json(); } catch {} throw {code: "server", status: r.status, detail: j.detail}; }
+      const reader = r.body.getReader(), dec = new TextDecoder();
+      let paintT = 0;
+      for (;;) {
+        const {value, done} = await reader.read();
+        if (done) break;
+        a.content += dec.decode(value, {stream: true});
+        if (!paintT) paintT = requestAnimationFrame(() => { paintT = 0; const e = el(); if (e) e.innerHTML = fmt(a.content); });
+      }
+      a.content = (a.content + dec.decode()).trim();
+      if (!a.content) throw {code: "server", detail: "빈 답변"};
+    } catch (e) {
+      a.content = ""; a.failed = true; $("askIn").value = question;
+      a.err = e.code === "busy" ? "질문이 너무 많습니다. 잠시 후 다시 보내 주세요."
+        : e.code === "code" ? "수업 코드를 입력한 뒤 다시 보내 주세요."
+        : e.code === "server" && /[가-힣]/.test(e.detail || "") ? esc(e.detail)
+        : e.code === "server" ? explain(e.status, e.detail).replace("번역 서버 오류입니다", "답변 서버 오류입니다")
+        : "서버에 연결할 수 없습니다. 인터넷 연결을 확인해 주세요.";
+    } finally {
+      a.done = true; asking = false;
+      renderChat(); renderAskDoc();
+      // Failed turns are shown once but not saved, so they don't confuse later questions.
+      ls.set("lb-qa", JSON.stringify(chat.filter((m, i) => !(m.failed || (chat[i + 1] && chat[i + 1].failed))).slice(-40)));
+    }
+  }
+  $("askForm").addEventListener("submit", e => { e.preventDefault(); ask($("askIn").value); });
+  $("askIn").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask($("askIn").value); } });
+  $("askIn").addEventListener("input", () => { const t = $("askIn"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, innerHeight * 0.3) + "px"; });
+  document.querySelectorAll(".chipq").forEach(b => b.onclick = () => ask(b.textContent));
+  document.querySelectorAll("#askLang [data-al]").forEach(b => b.onclick = () => {
+    askLang = b.dataset.al; ls.set("lb-ask-lang", askLang);
+    document.querySelectorAll("#askLang [data-al]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.al === askLang)));
+  });
+  document.querySelectorAll("#askLang [data-al]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.al === askLang)));
+  let clearArm = 0;
+  $("askClear").onclick = () => {
+    if (Date.now() - clearArm > 3000) { clearArm = Date.now(); $("askClear").textContent = "한 번 더 누르면 지워집니다"; setTimeout(() => $("askClear").textContent = "대화 지우기", 3000); return; }
+    sayGen++; if (synth) synth.cancel();
+    chat = []; saveChat(); renderChat(); $("askClear").textContent = "대화 지우기";
+  };
+  renderAskDoc(); renderChat();
 
   function renderAll(){
     $("title").textContent = S.title || "오늘의 강의";
