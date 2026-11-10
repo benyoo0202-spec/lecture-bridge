@@ -100,6 +100,96 @@ async function streamText(model, prompt, maxTokens, onText) {
   return { text, stop };
 }
 
+/* ---------- questions about a document ---------- */
+const QA_MODEL = process.env.QA_MODEL || "claude-sonnet-5-5";
+
+// Sends a full request body and streams the reply as plain text; falls back to a normal reply if streaming fails.
+async function streamBody(reqBody, res) {
+  const call = stream => fetch(API_BASE + "/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": API_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ ...reqBody, stream }),
+  });
+  let wrote = 0;
+  const write = t => {
+    if (!res.headersSent) res.writeHead(200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store, no-transform", "x-accel-buffering": "no" });
+    res.write(t); wrote += t.length;
+  };
+  try {
+    const r = await call(true);
+    if (!r.ok) throw new Error(`Claude API ${r.status}: ${(await r.text()).slice(0, 300)}`);
+    const reader = r.body.getReader(), dec = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+        if (!line.startsWith("data:")) continue;
+        let ev; try { ev = JSON.parse(line.slice(5)); } catch { continue; }
+        if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta" && ev.delta.text) write(ev.delta.text);
+        else if (ev.type === "error") throw new Error("stream error: " + (ev.error?.message || "unknown"));
+      }
+    }
+    if (!wrote) throw new Error("stream returned no text");
+  } catch (e) {
+    if (wrote) { console.error("answer cut short:", e.message); return res.end(); }
+    if (/Claude API (400|401|403|404)/.test(e.message)) throw e;
+    console.error("stream failed, using normal reply:", e.message);
+    const r = await call(false);
+    if (!r.ok) throw new Error(`Claude API ${r.status}: ${(await r.text()).slice(0, 300)}`);
+    const j = await r.json();
+    const text = (j.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+    if (!text) throw new Error("Claude returned no text");
+    write(text);
+  }
+  res.end();
+}
+
+// Simple keyword search so very long documents only send the parts that matter for the question.
+const STOP = new Set("the and for are but not you all any can had her was one our out has have this that with from they will would there their what which when where who how why does did into than then them these those about been were its also more most other some such only over very just your yours".split(" "));
+function terms(s) {
+  const out = [];
+  for (const w of String(s).toLowerCase().match(/[a-z0-9]{3,}|[가-힣]{2,}/g) || []) {
+    if (/^[가-힣]/.test(w)) { for (let i = 0; i < w.length - 1; i++) out.push(w.slice(i, i + 2)); }   // Korean: 2-letter pieces survive particles
+    else if (!STOP.has(w)) out.push(w.replace(/(ing|ed|es|s)$/, ""));
+  }
+  return out;
+}
+function retrieve(text, query, budget) {
+  const chunks = splitText(text, 1200);
+  const q = [...new Set(terms(query))];
+  const docs = chunks.map(c => { const m = new Map(); for (const t of terms(c)) m.set(t, (m.get(t) || 0) + 1); return m; });
+  const df = new Map(); for (const t of q) df.set(t, docs.filter(d => d.has(t)).length);
+  const N = chunks.length;
+  const scored = docs.map((d, i) => {
+    let s = 0;
+    for (const t of q) { const tf = d.get(t) || 0; if (tf) s += Math.log(1 + (N - df.get(t) + 0.5) / (df.get(t) + 0.5)) * (tf * 2.2) / (tf + 1.2); }
+    return { i, s };
+  }).sort((a, b) => b.s - a.s);
+  const pick = new Set([0]); let used = estTokens(chunks[0]);           // always keep the opening for context
+  for (const { i, s } of scored) {
+    if (s <= 0 || pick.has(i)) continue;
+    const t = estTokens(chunks[i]); if (used + t > budget) continue;
+    pick.add(i); used += t;
+    for (const j of [i - 1, i + 1]) {                                   // a little surrounding text
+      if (j < 0 || j >= N || pick.has(j)) continue;
+      const tj = estTokens(chunks[j]); if (used + tj <= budget) { pick.add(j); used += tj; }
+    }
+  }
+  return [...pick].sort((a, b) => a - b).map(i => `[Excerpt from part ${i + 1} of ${N}]\n${chunks[i]}`).join("\n\n");
+}
+const qaInstructions = (lang, excerpts) => `You are a helpful teaching assistant. A college student is asking questions about the document below (an assigned reading).
+- Base your answers on the document. If the document does not contain the answer, say so plainly first, then you may add a short general answer clearly labeled as not coming from the text.
+- Be clear and concrete. Usually 3-8 sentences; use short "- " bullet lists when listing things. No headings or tables; **bold** only for a key word or two.
+- When the answer comes from the text, end with a new line that starts with "${lang === "en" ? "Evidence:" : "근거:"}" followed by one or two short exact quotes from the document in quotation marks, so the student can find the place.
+- ${lang === "en" ? "Answer in clear English, whatever language the question is in."
+    : lang === "both" ? "Answer in Korean (합니다체) first. Then write a line with only \"English:\" and give the same answer in clear English."
+    : "Answer in natural Korean (합니다체), whatever language the question is in. Put English in parentheses after key terms, e.g. 기억 응고화(memory consolidation)."}
+${excerpts ? "- The document is very long, so you are given the excerpts that best match the question, in order. If they don't cover the question, say the relevant part may not have been found and suggest asking with more specific words.\n" : ""}`;
+
 /* ---------- long documents ---------- */
 // Rough token count: English is ~4 characters per token, Korean/Chinese/Japanese about 1 per character.
 function estTokens(s) {
@@ -258,8 +348,49 @@ const server = http.createServer(async (req, res) => {
   if (!API_KEY) return send(res, 503, { error: "server has no API key" });
 
   let body;
-  try { body = await readBody(req, url.pathname === "/api/document" ? 7_000_000 : 400_000); }
+  try { body = await readBody(req, url.pathname === "/api/document" || url.pathname === "/api/ask" ? 7_000_000 : 400_000); }
   catch (e) { return send(res, e.message === "too large" ? 413 : 400, { error: "bad request", detail: e.message === "too large" ? "문서가 너무 큽니다" : "" }); }
+
+  if (url.pathname === "/api/ask") {
+    if (!allowed(ip, "a", 20)) return send(res, 429, { error: "slow down" });
+    const text = str(body.text, DOC_MAX_CHARS).trim(), question = str(body.question, 1500).trim();
+    if (text.length < 50) return send(res, 400, { error: "no document", detail: "먼저 문서를 올려 주세요" });
+    if (!question) return send(res, 400, { error: "no question", detail: "질문을 입력해 주세요" });
+    const lang = ["ko", "en", "both"].includes(body.lang) ? body.lang : "ko";
+    const name = str(body.name, 120).trim();
+    // Earlier turns, oldest first, so follow-up questions ("왜요?") make sense.
+    const hist = (Array.isArray(body.history) ? body.history : []).slice(-8)
+      .map(h => ({ role: h && h.role === "assistant" ? "assistant" : "user", content: str(h && h.content, 3000).trim() }))
+      .filter(h => h.content);
+    const messages = [];
+    for (const m of [...hist, { role: "user", content: question }]) {
+      if (!messages.length && m.role !== "user") continue;
+      const last = messages[messages.length - 1];
+      if (last && last.role === m.role) last.content += "\n\n" + m.content; else messages.push({ ...m });
+    }
+    try {
+      let docBlock = text, excerpts = false;
+      if (estTokens(text) > 50_000) {
+        // Long document: find the relevant parts. Ask for keywords first so a Korean question can find English text.
+        let kw = "";
+        try { kw = await askClaude(NOTES_MODEL, `List 10-15 search keywords for finding the answer to this question in a document. Include English and Korean versions of the key words and likely synonyms. Reply with the keywords separated by commas, nothing else.\n\n${hist.length ? "Earlier question: " + (hist.filter(h => h.role === "user").slice(-1)[0]?.content || "") + "\n" : ""}Question: ${question}`, 200); } catch {}
+        docBlock = retrieve(text, `${question} ${kw}`, 25_000);
+        excerpts = true;
+      }
+      return await streamBody({
+        model: QA_MODEL, max_tokens: 2000,
+        system: [
+          { type: "text", text: qaInstructions(lang, excerpts) },
+          { type: "text", text: `<document${name ? ` name="${name.replace(/"/g, "'")}"` : ""}>\n${docBlock}\n</document>`, cache_control: { type: "ephemeral" } },
+        ],
+        messages,
+      }, res);
+    } catch (e) {
+      console.error("/api/ask", e.message);
+      if (res.headersSent) { try { res.end(); } catch {} return; }
+      return send(res, 502, { error: "answer error", detail: String(e.message).slice(0, 240) });
+    }
+  }
 
   if (url.pathname === "/api/document") {
     if (!allowed(ip, "d", 4)) return send(res, 429, { error: "slow down" });
